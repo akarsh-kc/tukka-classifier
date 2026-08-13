@@ -1637,9 +1637,40 @@
                 <div id="answer-block-${e.id}" class="hidden mt-2">
                     <p class="text-xs text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>${escHtml(e.correctAnswer || '')}</p>
                     ${e.explanation ? `<p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">${escHtml(e.explanation)}</p>` : ''}
+                    ${!answerMatchesOptions(e) ? `<p class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-1.5 leading-relaxed"><i class="fa-solid fa-lightbulb mr-1"></i>This one's worth a quick look — the marked answer doesn't clearly line up with the listed options.</p>` : ''}
                 </div>
                 <p class="text-[10px] text-slate-400 font-semibold mt-2.5">${dateStr}</p>
             </div>`;
+        }
+
+        // Soft, best-effort check — not a validator. Gemini occasionally returns a
+        // "correctAnswer" that doesn't actually match any of the listed options
+        // (e.g. its working changed its mind partway through). This just flags
+        // that mismatch with a gentle note so the user knows to glance at it;
+        // it never blocks or alters the saved data.
+        function normalizeAnswerText(s) {
+            return (s || '').toString().toLowerCase()
+                .replace(/\\\(|\\\)|\$\$|\$/g, '')
+                .replace(/\\text\{([^}]*)\}/g, '$1')
+                .replace(/[^a-z0-9]+/g, '')
+                .trim();
+        }
+        function answerMatchesOptions(entry) {
+            const opts = (entry.options || []).filter(Boolean);
+            if (!opts.length) return true; // nothing to compare against (fill-in-the-value question)
+            const rawAns = (entry.correctAnswer || '').trim();
+            if (!rawAns) return true;
+            const letterMatch = rawAns.match(/^\(?([a-dA-D])\)?[.\):]/);
+            if (letterMatch) {
+                const idx = letterMatch[1].toLowerCase().charCodeAt(0) - 97;
+                if (opts[idx]) return true; // answer references a valid option letter
+            }
+            const ans = normalizeAnswerText(rawAns);
+            if (!ans) return true;
+            return opts.some(o => {
+                const normOpt = normalizeAnswerText(o);
+                return normOpt && (normOpt.includes(ans) || ans.includes(normOpt));
+            });
         }
 
         function toggleAnswerBlock(id) {
@@ -1834,11 +1865,13 @@ Use this exact shape for every object:
 
 IMPORTANT — classify carefully: Ancient/Medieval/Modern History are separate folders — sort by era (Ancient: pre-6th century CE India, e.g. Indus Valley, Vedic, Maurya, Gupta; Medieval: Delhi Sultanate to Mughals; Modern: British era, freedom struggle, post-1947). Physics/Chemistry/Biology questions go in their own science subject, not a generic bucket. Anything general-fact/one-off (awards, books, sports, days, appointments, etc.) that doesn't fit a specific subject goes in "Static GK".
 
-IMPORTANT — get the answer right: reason through each question carefully before writing anything down — a wrong "correctAnswer" is worse than no explanation.
+IMPORTANT — get the answer right: reason through each question carefully in your own private reasoning before writing anything down — a wrong "correctAnswer" is worse than no explanation.
 
-IMPORTANT — keep "explanation" SHORT: 1–3 concise sentences with the key fact or reasoning — not a long essay.
+IMPORTANT — before you output each object, re-read your own "explanation" and confirm it actually concludes with the same option/value you put in "correctAnswer". These two fields must never contradict each other — if they don't match, redo the reasoning from scratch and only then fill in both fields together.
 
-If a question involves a scientific formula or equation (Physics/Chemistry), write it using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(F = ma\\\\). This lets the app render it properly instead of as raw text. Plain factual questions (History, Polity, Geography, Static GK, etc.) don't need this.
+IMPORTANT — "explanation" must read as a finished, clean answer only — never your scratch work. Do NOT include any trace of the reasoning process itself: no "wait", "let me check/recheck", "hmm", "actually", no false starts, no revisiting an option you already ruled out. Keep it to 1–3 concise sentences with just the key fact or reasoning — not a long essay.
+
+If a question involves a scientific formula or equation (Physics/Chemistry), write it using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(F = ma\\\\). Never emit a bare LaTeX command (anything starting with a backslash) outside of \\\\(...\\\\) or $$...$$ delimiters — unwrapped LaTeX shows up as broken raw text in the app. Plain factual questions (History, Polity, Geography, Static GK, etc.) don't need this.
 
 Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "type": "qa", ...}, {"folder": "...", "type": "qa", ...}]
 

@@ -1600,9 +1600,40 @@
                 <div id="answer-block-${e.id}" class="hidden mt-2">
                     <p class="text-xs text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>${escHtml(e.correctAnswer || '')}</p>
                     ${e.explanation ? `<p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">${escHtml(e.explanation)}</p>` : ''}
+                    ${!answerMatchesOptions(e) ? `<p class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-1.5 leading-relaxed"><i class="fa-solid fa-lightbulb mr-1"></i>This one's worth a quick look — the marked answer doesn't clearly line up with the listed options.</p>` : ''}
                 </div>
                 <p class="text-[10px] text-slate-400 font-semibold mt-2.5">${dateStr}</p>
             </div>`;
+        }
+
+        // Soft, best-effort check — not a validator. Gemini occasionally returns a
+        // "correctAnswer" that doesn't actually match any of the listed options
+        // (e.g. its working changed its mind partway through). This just flags
+        // that mismatch with a gentle note so the user knows to glance at it;
+        // it never blocks or alters the saved data.
+        function normalizeAnswerText(s) {
+            return (s || '').toString().toLowerCase()
+                .replace(/\\\(|\\\)|\$\$|\$/g, '')
+                .replace(/\\text\{([^}]*)\}/g, '$1')
+                .replace(/[^a-z0-9]+/g, '')
+                .trim();
+        }
+        function answerMatchesOptions(entry) {
+            const opts = (entry.options || []).filter(Boolean);
+            if (!opts.length) return true; // nothing to compare against (fill-in-the-value question)
+            const rawAns = (entry.correctAnswer || '').trim();
+            if (!rawAns) return true;
+            const letterMatch = rawAns.match(/^\(?([a-dA-D])\)?[.\):]/);
+            if (letterMatch) {
+                const idx = letterMatch[1].toLowerCase().charCodeAt(0) - 97;
+                if (opts[idx]) return true; // answer references a valid option letter
+            }
+            const ans = normalizeAnswerText(rawAns);
+            if (!ans) return true;
+            return opts.some(o => {
+                const normOpt = normalizeAnswerText(o);
+                return normOpt && (normOpt.includes(ans) || ans.includes(normOpt));
+            });
         }
 
         function toggleAnswerBlock(id) {
