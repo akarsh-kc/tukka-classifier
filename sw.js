@@ -1,5 +1,5 @@
 // Bump this on every deploy (or automate it — see notes below).
-const CACHE_NAME = "tukka-classifier-cache-v1";
+const CACHE_NAME = "tukka-classifier-cache-v2";
 const CORE_ASSETS = [
   "./index.html",
   "./manifest.json",
