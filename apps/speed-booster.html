@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Speed Booster — Tukka Classifier</title>
+
+    <!-- PWA setup -->
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#7c3aed">
+    <meta name="color-scheme" content="light dark">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Maths Speed Booster">
+    <link rel="icon" href="../icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="../icon-192.png">
+    <link rel="preload" as="image" href="../icon-192.png" fetchpriority="high">
+
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('tukka_dark_mode') === null) {
+                    localStorage.setItem('tukka_dark_mode', 'false');
+                }
+                if (localStorage.getItem('tukka_dark_mode') === 'true') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 500: '#7c3aed',
+                            600: '#6d28d9', 700: '#5b21b6', 800: '#4c1d95', 900: '#3b0f6e',
+                        },
+                        accent: { amber: '#f59e0b', rose: '#fb3d68', emerald: '#10d9a3', purple: '#a855f7', cyan: '#22d3ee' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        glow: '0 0 0 1px rgba(124,58,237,0.15), 0 8px 24px -8px rgba(124,58,237,0.35)',
+                        'glow-lg': '0 0 40px -8px rgba(124,58,237,0.45)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6fb;
+            background-image:
+                radial-gradient(circle at 15% 0%, rgba(124,58,237,0.10), transparent 40%),
+                radial-gradient(circle at 85% 8%, rgba(236,72,153,0.10), transparent 38%),
+                linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px);
+            background-size: auto, auto, 42px 42px, 42px 42px;
+            background-attachment: fixed;
+        }
+        h1, h2, h3, h4, .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; letter-spacing: -0.01em; }
+        .font-mono-tech { font-family: 'JetBrains Mono', monospace; }
+        body { -webkit-user-select: none; -moz-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; -moz-user-select: text; user-select: text; -webkit-touch-callout: default; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #a78bfa, #f472b6); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #8b5cf6, #ec4899); }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            backdrop-filter: blur(10px) saturate(140%);
+            -webkit-backdrop-filter: blur(10px) saturate(140%);
+            box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 12px 28px -12px rgba(30, 41, 59, 0.10);
+            position: relative; contain: layout style;
+            transition: box-shadow 0.35s ease, transform 0.35s ease, border-color 0.35s ease;
+        }
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+            .glass-panel { background: rgba(255, 255, 255, 0.98); }
+        }
+        .glass-panel::before {
+            content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.35), rgba(236,72,153,0.05) 35%, rgba(168,85,247,0.25) 100%);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0.55; pointer-events: none;
+        }
+        .glass-panel:hover {
+            box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05), 0 20px 40px -14px rgba(124,58,237, 0.22);
+            transform: translateY(-2px); border-color: rgba(124,58,237, 0.35);
+        }
+        @media (max-width: 768px) { .glass-panel:hover { transform: none; } }
+        .tool-card:hover { transform: translateY(-3px); }
+        .tool-card:active { transform: scale(0.98); }
+
+        .gradient-flow-bg { background: linear-gradient(270deg, #7c3aed, #ec4899, #a855f7, #7c3aed); background-size: 300% 300%; background-position: 35% 50%; }
+        .pulse-dot { box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+        .app-sidebar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 1px 2px 0 rgba(15,23,42,0.04), 0 24px 48px -20px rgba(124,58,237,0.22), 0 8px 20px -10px rgba(30,41,59,0.10);
+            transition: background .4s ease, border-color .4s ease, box-shadow .4s ease;
+        }
+        html.dark .app-sidebar {
+            background: linear-gradient(180deg, rgba(9, 13, 28, 0.96) 0%, rgba(7, 10, 22, 0.98) 100%);
+            border-color: rgba(124, 58, 237, 0.18);
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.4), 0 24px 48px -18px rgba(0,0,0,0.6), 0 0 30px -12px rgba(124,58,237,0.25);
+        }
+
+        .nav-rail { position: relative; }
+        .nav-pill {
+            position: relative; width: 100%; display: flex; align-items: center; gap: 0.7rem;
+            padding: 0.65rem 0.8rem; border-radius: 0.85rem; font-size: 0.72rem; font-weight: 600;
+            letter-spacing: 0.01em; color: #3b4a63; background: rgba(124, 58, 237, 0.07);
+            border: 1px solid rgba(124, 58, 237, 0.14); cursor: pointer; overflow: hidden; isolation: isolate;
+            will-change: transform;
+            transition: background .45s ease, border-color .45s ease, color .4s ease, transform .38s cubic-bezier(.34,1.2,.64,1), box-shadow .45s ease;
+        }
+        .nav-pill .nav-icon-wrap {
+            width: 1.6rem; height: 1.6rem; border-radius: 0.5rem; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(124, 58, 237, 0.14); color: var(--pill-a, #7c3aed);
+            transition: background .45s ease, color .4s ease, transform .4s cubic-bezier(.34,1.2,.64,1);
+        }
+        .nav-pill:hover { background: rgba(124, 58, 237, 0.14); border-color: rgba(124,58,237,0.32); }
+        .nav-pill:active { transform: scale(0.97); }
+        .nav-pill.nav-active {
+            color: #fff; background: linear-gradient(120deg, var(--pill-a, #7c3aed), var(--pill-b, #ec4899));
+            border-color: transparent;
+            box-shadow: 0 10px 24px -10px var(--pill-glow, rgba(124,58,237,.65)), 0 0 0 1px rgba(255,255,255,0.08) inset;
+        }
+        .nav-pill.nav-active .nav-icon-wrap { background: rgba(255,255,255,0.22); color: #fff; }
+        .nav-pill.nav-active .nav-active-dot {
+            position: absolute; right: 0.65rem; top: 50%; transform: translateY(-50%);
+            width: 6px; height: 6px; border-radius: 999px; background: #fff; box-shadow: 0 0 6px 1px rgba(255,255,255,0.8);
+        }
+        .nav-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(148,163,184,0.35), transparent); margin: 0.5rem 0.25rem; }
+        html.dark .nav-divider { background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent); }
+        html.dark .nav-pill { color: #a6b3cc; background: rgba(124, 58, 237, 0.09); border-color: rgba(124, 58, 237, 0.18); }
+        html.dark .nav-pill .nav-icon-wrap { background: rgba(124, 58, 237, 0.16); }
+        html.dark .nav-pill:hover { background: rgba(124, 58, 237, 0.12); border-color: rgba(124, 58, 237, 0.4); color: #e6ebf5; }
+        html.dark .nav-pill.nav-active { box-shadow: 0 10px 28px -8px var(--pill-glow, rgba(124,58,237,.55)), 0 0 0 1px rgba(255,255,255,0.06) inset; }
+
+        html { color-scheme: light; }
+        html.dark { color-scheme: dark; }
+        html.dark body {
+            background-color: #060a17; color: #e2e8f0;
+            background-image:
+                radial-gradient(circle at 12% 0%, rgba(124,58,237,0.20), transparent 42%),
+                radial-gradient(circle at 88% 12%, rgba(236,72,153,0.16), transparent 40%),
+                radial-gradient(circle at 50% 100%, rgba(168,85,247,0.12), transparent 45%),
+                linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px);
+            background-size: auto, auto, auto, 42px 42px, 42px 42px;
+        }
+        html.dark ::-webkit-scrollbar-track { background: #0a0f1e; }
+        html.dark .glass-panel {
+            background: rgba(15, 21, 40, 0.92); border-color: rgba(124, 58, 237, 0.18);
+            backdrop-filter: blur(11px) saturate(140%); -webkit-backdrop-filter: blur(11px) saturate(140%);
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 12px 32px -14px rgba(0, 0, 0, 0.55);
+        }
+        html.dark .glass-panel::before { opacity: 0.9; }
+        html.dark .glass-panel:hover { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.4), 0 24px 48px -16px rgba(124, 58, 237, 0.35); border-color: rgba(124, 58, 237, 0.5); }
+        html.dark aside { background-color: rgba(6, 10, 23, 0.85) !important; border-color: rgba(124,58,237,0.18) !important; }
+        html.dark [class~="bg-white"] { background-color: #151f32 !important; }
+        html.dark [class~="bg-slate-50"] { background-color: #0f172a !important; }
+        html.dark body[class~="bg-slate-50"] { background-color: #0b1220 !important; }
+        html.dark [class~="bg-slate-100"] { background-color: #1e293b !important; }
+        html.dark [class~="bg-slate-200"] { background-color: #334155 !important; }
+        html.dark [class~="text-slate-900"] { color: #f1f5f9 !important; }
+        html.dark [class~="text-slate-800"] { color: #e2e8f0 !important; }
+        html.dark [class~="text-slate-700"] { color: #cbd5e1 !important; }
+        html.dark [class~="text-slate-600"] { color: #94a3b8 !important; }
+        html.dark [class~="text-slate-500"] { color: #94a3b8 !important; }
+        html.dark [class~="text-slate-400"] { color: #64748b !important; }
+        html.dark [class~="border-slate-100"] { border-color: #1e293b !important; }
+        html.dark [class~="border-slate-200"] { border-color: #26344a !important; }
+        html.dark [class*="hover:bg-slate-"]:hover { background-color: #1e293b !important; }
+        html.dark [class~="bg-brand-50"] { background-color: rgba(124, 58, 237, 0.15) !important; }
+        html.dark [class~="bg-brand-100"] { background-color: rgba(124, 58, 237, 0.18) !important; }
+        html.dark [class~="bg-emerald-50"] { background-color: rgba(16, 185, 129, 0.15) !important; }
+        html.dark [class~="bg-rose-50"] { background-color: rgba(244, 63, 94, 0.15) !important; }
+        html.dark [class~="bg-amber-50"] { background-color: rgba(245, 158, 11, 0.15) !important; }
+        html.dark [class~="text-brand-600"] { color: #a78bfa !important; }
+        html.dark [class~="text-brand-700"] { color: #c4b5fd !important; }
+        html.dark [class~="text-emerald-600"] { color: #34d399 !important; }
+        html.dark [class~="text-rose-600"] { color: #fb7185 !important; }
+        html.dark [class~="text-amber-600"] { color: #fbbf24 !important; }
+        html.dark [class~="border-brand-200"] { border-color: rgba(124, 58, 237, 0.35) !important; }
+        html.dark #dark-mode-toggle { background-color: #6d28d9 !important; }
+        html.dark #dark-mode-knob { transform: translateX(20px); }
+
+        .mobile-topbar { display: none; }
+        #nav-overlay { display: none; }
+        @media (max-width: 1023.98px) {
+            .mobile-topbar {
+                display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 9990;
+                align-items: center; gap: 0.6rem; padding: 0.6rem 0.9rem;
+                background: #ffffff; border-bottom: 1px solid rgba(148,163,184,0.25);
+            }
+            html.dark .mobile-topbar { background: #090d1c; border-bottom-color: rgba(124,58,237,0.2); }
+            #mobile-menu-btn {
+                width: 2.4rem; height: 2.4rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+                border-radius: 0.7rem; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.22);
+                color: #6d28d9; font-size: 1.05rem;
+            }
+            html.dark #mobile-menu-btn { color: #c4b5fd; background: rgba(124,58,237,0.18); }
+            #mobile-menu-btn:active { transform: scale(0.94); }
+            .mobile-topbar h1 { color: #1e293b; }
+            html.dark .mobile-topbar h1 { color: #f1f5f9; }
+            .app-sidebar {
+                position: fixed !important; left: 0 !important; top: 0 !important; bottom: 0 !important;
+                width: 78vw !important; max-width: 300px; border-radius: 0 1.25rem 1.25rem 0 !important;
+                transform: translateX(-105%); transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+                z-index: 9995 !important; background: #ffffff !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+                box-shadow: 0 0 0 1px rgba(148,163,184,0.25); pointer-events: auto; will-change: transform;
+            }
+            html.dark .app-sidebar { background: #0b1020 !important; }
+            body.nav-open .app-sidebar { transform: translateX(0); }
+            .app-sidebar, .app-sidebar * { touch-action: manipulation; }
+            .app-sidebar .hidden.lg\:inline { display: inline !important; }
+            .app-sidebar .hidden.lg\:block { display: block !important; }
+            .app-sidebar .hidden.lg\:flex { display: flex !important; }
+            .app-sidebar .lg\:justify-start { justify-content: flex-start !important; }
+            .app-sidebar .lg\:justify-between { justify-content: space-between !important; }
+            #nav-overlay { display: block; position: fixed; inset: 0; background: rgba(10,14,28,0.55); z-index: 9992; opacity: 0; pointer-events: none; transition: opacity 0.36s ease; }
+            body.nav-open #nav-overlay { opacity: 1; pointer-events: auto; }
+            body.nav-open { overflow: hidden; }
+            #app-content-wrap { margin-left: 0 !important; padding-top: 3.6rem; }
+        }
+        @media (max-width: 1023.98px) {
+            body { background-attachment: scroll; }
+            .glass-panel { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(255,255,255,0.98); }
+            html.dark .glass-panel { background: rgba(15,21,40,0.98); }
+            .glass-panel::before { display: none; }
+            .glass-panel:hover { transform: none; box-shadow: 0 1px 2px 0 rgba(15,23,42,0.04), 0 12px 28px -12px rgba(30,41,59,0.10); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+        }
+        html.theme-transition, html.theme-transition body, html.theme-transition .glass-panel, html.theme-transition .app-sidebar {
+            transition: background-color .35s ease, color .35s ease, border-color .35s ease, box-shadow .35s ease !important;
+        }
+
+        /* ---- pill selectors (used in config forms) ---- */
+        .opt-pill {
+            display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.85rem; border-radius: 0.7rem;
+            font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1.5px solid rgba(148,163,184,0.35);
+            background: rgba(148,163,184,0.06); color: #475569; transition: all .2s ease; user-select: none;
+        }
+        html.dark .opt-pill { color: #94a3b8; border-color: rgba(148,163,184,0.2); background: rgba(148,163,184,0.06); }
+        .opt-pill.opt-selected { background: linear-gradient(120deg, #7c3aed, #ec4899); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -6px rgba(124,58,237,0.6); }
+        .opt-pill input { display: none; }
+
+        /* ---- quiz option buttons ---- */
+        .quiz-option {
+            display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left;
+            padding: 0.9rem 1rem; border-radius: 1rem; border: 1.5px solid rgba(148,163,184,0.3);
+            background: rgba(255,255,255,0.7); font-weight: 700; font-size: 0.92rem; color: #1e293b;
+            transition: all .15s ease; cursor: pointer;
+        }
+        html.dark .quiz-option { background: rgba(21,31,50,0.7); color: #e2e8f0; border-color: rgba(148,163,184,0.18); }
+        .quiz-option:not(:disabled):hover { border-color: #a78bfa; background: rgba(124,58,237,0.06); transform: translateX(2px); }
+        .quiz-option:disabled { cursor: default; }
+        .quiz-option.q-correct { background: rgba(16,185,129,0.14) !important; border-color: #10b981 !important; color: #047857; }
+        html.dark .quiz-option.q-correct { color: #6ee7b7; }
+        .quiz-option.q-wrong { background: rgba(244,63,94,0.12) !important; border-color: #f43f5e !important; color: #be123c; }
+        html.dark .quiz-option.q-wrong { color: #fda4af; }
+        .quiz-option .opt-letter {
+            width: 1.9rem; height: 1.9rem; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center;
+            background: rgba(124,58,237,0.1); font-size: 0.78rem; font-weight: 800; color: #7c3aed; flex-shrink: 0;
+        }
+        html.dark .quiz-option .opt-letter { background: rgba(124,58,237,0.2); color: #c4b5fd; }
+        .timer-bar-track { height: 6px; border-radius: 999px; background: rgba(148,163,184,0.25); overflow: hidden; }
+
+        @keyframes flashIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-in { animation: flashIn .28s ease both; }
+
+        /* toast */
+        #toast-container { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 10010; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; width: 92%; max-width: 380px; }
+        .toast { padding: 0.65rem 1rem; border-radius: 0.85rem; font-size: 0.78rem; font-weight: 600; color: #fff; box-shadow: 0 10px 26px -10px rgba(0,0,0,0.35); animation: flashIn .25s ease both; width: 100%; text-align: center; }
+        .toast-success { background: linear-gradient(120deg, #10b981, #059669); }
+        .toast-error { background: linear-gradient(120deg, #f43f5e, #e11d48); }
+        .toast-info { background: linear-gradient(120deg, #6366f1, #7c3aed); }
+
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(10,14,28,0.55); z-index: 9998; display: flex; align-items: flex-end; justify-content: center; }
+        @media (min-width: 640px) { .modal-backdrop { align-items: center; } }
+        .modal-sheet { width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex selection:bg-brand-500 selection:text-white">
+
+    <div id="app-loading-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-[#05070f] transition-opacity duration-500 ease-out">
+        <div class="rounded-2xl shadow-glow overflow-hidden w-16 h-16"><img src="../icon-512.png" alt="Tukka Classifier" class="w-full h-full object-contain"></div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Made by Akarsh K C❤️</p>
+        <h1 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100 text-center">Maths Speed Booster</h1>
+        <i class="fa-solid fa-spinner fa-spin text-brand-500 text-base mt-1"></i>
+    </div>
+
+    <header class="mobile-topbar">
+        <button id="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+        <div class="flex items-center gap-2 min-w-0">
+            <div class="rounded-lg overflow-hidden shrink-0 w-7 h-7"><img src="../icon-512.png" alt="Logo" class="w-full h-full object-contain"></div>
+            <h1 class="text-sm font-bold font-display truncate">Maths Speed Booster</h1>
+        </div>
+    </header>
+
+    <div id="nav-overlay" onclick="closeMobileNav()"></div>
+
+    <aside class="app-sidebar fixed left-2 top-2 bottom-2 lg:left-4 lg:top-4 lg:bottom-4 w-[64px] lg:w-64 rounded-[1.75rem] z-40 flex flex-col transition-all duration-300 overflow-hidden">
+        <div class="absolute top-0 right-0 bottom-0 w-[2px] gradient-flow-bg"></div>
+        <div class="px-3 lg:px-5 py-5 flex items-center gap-3 border-b border-slate-200/70 dark:border-transparent justify-center lg:justify-start">
+            <div class="rounded-xl shadow-glow overflow-hidden shrink-0 w-11 h-11"><img src="../icon-512.png" alt="Logo" class="w-full h-full object-contain"></div>
+            <div class="hidden lg:block min-w-0">
+                <h1 class="text-base font-bold font-display bg-gradient-to-r from-brand-700 via-brand-600 to-fuchsia-600 bg-clip-text text-transparent leading-tight">Speed Booster</h1>
+                <p class="text-[11px] text-slate-500 font-medium flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot inline-block shrink-0"></span>
+                    <span>Made by Akarsh K C❤️</span>
+                </p>
+            </div>
+            <button onclick="closeMobileNav()" class="lg:hidden ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 shrink-0" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <nav class="nav-rail flex-1 overflow-y-auto px-2 lg:px-3 py-4 space-y-1.5">
+            <button onclick="goDashboard()" id="nav-dashboard-btn" class="nav-pill nav-active" style="--pill-a:#7c3aed;--pill-b:#ec4899;--pill-glow:rgba(124,58,237,.5)" title="Dashboard">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-gauge-high"></i></span><span class="hidden lg:inline">Dashboard</span><span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="tukkaSwitchCategory()" id="nav-category-btn" class="nav-pill" style="--pill-a:#e11d48;--pill-b:#fb7185;--pill-glow:rgba(225,29,72,.55)" title="Switch App / Category">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-shapes"></i></span><span class="hidden lg:inline truncate">Switch Category</span>
+            </button>
+            <div class="nav-divider"></div>
+            <button onclick="showBackupView()" id="nav-backup-btn" class="nav-pill" style="--pill-a:#059669;--pill-b:#f59e0b;--pill-glow:rgba(5,150,105,.5)" title="Backup & Restore your data">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-cloud-arrow-up"></i></span><span class="hidden lg:inline">Backup &amp; Restore</span>
+            </button>
+            <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="handleImportFile(event)">
+            <div class="nav-divider"></div>
+            <button onclick="showAboutView()" id="nav-about-btn" class="nav-pill" style="--pill-a:#ec4899;--pill-b:#f59e0b;--pill-glow:rgba(236,72,153,.55)" title="About Me">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-circle-user"></i></span><span class="hidden lg:inline">About Me</span>
+            </button>
+        </nav>
+
+        <div class="px-3 lg:px-5 py-4 border-t border-slate-200/70 dark:border-transparent flex items-center justify-center lg:justify-between">
+            <span class="hidden lg:inline text-xs font-semibold text-slate-500">Dark Mode</span>
+            <button onclick="toggleDarkMode()" id="dark-mode-toggle" class="relative w-11 h-6 rounded-full bg-slate-200 transition-colors duration-300 shrink-0" title="Toggle dark mode" aria-label="Toggle dark mode">
+                <span id="dark-mode-knob" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 flex items-center justify-center">
+                    <i id="dark-mode-icon" class="fa-solid fa-sun text-amber-500 text-[10px]"></i>
+                </span>
+            </button>
+        </div>
+    </aside>
+
+    <div id="app-content-wrap" class="flex-1 flex flex-col min-w-0 ml-0 lg:ml-[296px] pb-12 pr-2 lg:pr-0 transition-all duration-300">
+    <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto p-4 lg:p-6 space-y-6"></main>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirm-modal" class="modal-backdrop hidden">
+        <div class="glass-panel modal-sheet rounded-t-3xl sm:rounded-3xl p-6">
+            <h3 id="confirm-modal-title" class="text-base font-bold font-display mb-2"></h3>
+            <p id="confirm-modal-body" class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-5"></p>
+            <div class="flex gap-2">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-sm font-bold">Cancel</button>
+                <button id="confirm-modal-action" class="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-bold">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIG MODAL (tool setup) -->
+    <div id="config-modal" class="modal-backdrop hidden">
+        <div class="glass-panel modal-sheet rounded-t-3xl sm:rounded-3xl p-6" id="config-modal-inner"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+
+    <script>
+// ===================================================================
+// Maths Speed Booster — question generation core
+// Pure logic, no DOM. Tested standalone in node, then embedded as-is
+// into apps/maths-speed-booster.html inside a <script> tag.
+// ===================================================================
+
+// ---------- generic helpers ----------
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function randFloat(min, max, dec) { const v = Math.random() * (max - min) + min; const p = Math.pow(10, dec); return Math.round(v * p) / p; }
+function choice(arr) { return arr[randInt(0, arr.length - 1)]; }
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = randInt(0, i);[a[i], a[j]] = [a[j], a[i]]; } return a; }
+function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function fmtNum(x, dec) {
+    dec = dec === undefined ? 2 : dec;
+    if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x));
+    const p = Math.pow(10, dec);
+    return (Math.round(x * p) / p).toString();
+}
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+// simplify a fraction n/d -> [n,d] with d>0
+function simplifyFrac(n, d) {
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(n, d) || 1;
+    return [n / g, d / g];
+}
+function fracToStr(n, d) {
+    [n, d] = simplifyFrac(n, d);
+    if (d === 1) return String(n);
+    return `${n}/${d}`;
+}
+function fracToMixedStr(n, d) {
+    [n, d] = simplifyFrac(n, d);
+    const sign = n < 0 ? '-' : '';
+    n = Math.abs(n);
+    const whole = Math.floor(n / d);
+    const rem = n % d;
+    if (d === 1) return sign + String(whole);
+    if (whole === 0) return sign + `${rem}/${d}`;
+    if (rem === 0) return sign + String(whole);
+    return `${sign}${whole} ${rem}/${d}`;
+}
+
+// numeric distractor generator — returns `count` distinct wrong values that are
+// deliberately CLOSE to `correct` and, for integer answers, often share the same
+// last digit — so the options can't be eliminated by rough magnitude or unit-digit
+// shortcuts (matches real SSC/Bank/Railway MCQ option design).
+function numericDistractors(correct, scale, count, dec) {
+    count = count || 3; dec = dec || 0;
+    scale = Math.max(1, Math.abs(scale) || 1);
+    const p = Math.pow(10, dec);
+    const norm = v => Math.round(v * p) / p;
+    const used = new Set([norm(correct)]);
+    const out = [];
+
+    if (dec === 0) {
+        // Strategy per slot: [same-unit-digit / ±10s], [near value, different unit digit], [medium-range]
+        const tenStep = Math.max(1, Math.round(scale / 10)) || 1;
+        const plans = [
+            () => correct + choice([1, -1]) * randInt(1, Math.max(1, tenStep)) * 10,      // same last digit
+            () => correct + choice([1, -1]) * randInt(1, 4),                                // close, likely different last digit
+            () => correct + choice([1, -1]) * randInt(Math.max(2, Math.round(scale * 0.08)), Math.max(3, Math.round(scale * 0.22)) + 2)
+        ];
+        for (let i = 0; i < count && i < plans.length; i++) {
+            let cand = norm(plans[i]());
+            let guard = 0;
+            while ((used.has(cand) || !isFinite(cand)) && guard < 20) { cand = norm(plans[i]()); guard++; }
+            used.add(cand); out.push(cand);
+        }
+        while (out.length < count) {
+            const cand = norm(correct + choice([1, -1]) * randInt(1, Math.max(3, tenStep * 2)));
+            if (!used.has(cand)) { used.add(cand); out.push(cand); }
+        }
+    } else {
+        for (let i = 0; i < count; i++) {
+            let cand = norm(correct + choice([1, -1]) * randFloat(0.1, Math.max(0.5, scale * 0.2), dec));
+            let guard = 0;
+            while (used.has(cand) && guard < 20) { cand = norm(correct + choice([1, -1]) * randFloat(0.1, Math.max(0.5, scale * 0.2), dec)); guard++; }
+            used.add(cand); out.push(cand);
+        }
+    }
+    let fallbackStep = Math.max(1, Math.round(scale * 0.1)) || 1;
+    while (out.length < count) {
+        const cand = norm(correct + fallbackStep * (out.length + 1) * choice([1, -1]));
+        if (!used.has(cand)) { used.add(cand); out.push(cand); }
+        fallbackStep++;
+    }
+    return out;
+}
+
+function mcqFromNumeric(correct, scale, dec, formatter) {
+    dec = dec || 0;
+    formatter = formatter || (v => fmtNum(v, dec));
+    const distractors = numericDistractors(correct, scale, 3, dec);
+    const options = shuffle([formatter(correct), ...distractors.map(formatter)]);
+    return { options, answer: formatter(correct), numeric: true, rawAnswer: correct };
+}
+
+// ---------- anti-repetition ----------
+// Keeps a rolling window of recent question signatures (per tool) so the
+// same exact question text can't appear twice in quick succession. Since
+// every generator below draws its numbers fresh from wide random ranges,
+// this is a safety net rather than the primary defence — true duplicates
+// are already rare by construction.
+function makeDedupeGuard(windowSize) {
+    windowSize = windowSize || 40;
+    const seen = [];
+    return function isDupe(signature) {
+        if (seen.includes(signature)) return true;
+        seen.push(signature);
+        if (seen.length > windowSize) seen.shift();
+        return false;
+    };
+}
+
+function generateUnique(genFn, isDupe, maxTries) {
+    maxTries = maxTries || 25;
+    for (let i = 0; i < maxTries; i++) {
+        const q = genFn();
+        if (!q) continue;
+        if (!isDupe(q.sig || q.q)) return q;
+    }
+    return genFn(); // give up dedupe-checking, still return something valid
+}
+
+// ===================================================================
+// SERIES
+// ===================================================================
+const SERIES_DIFF = {
+    easy: { len: [5, 6], magStart: [2, 40], magStep: [2, 9], allowMul: false, allowQuad: false, allowAlt: false },
+    medium: { len: [6, 7], magStart: [5, 200], magStep: [3, 20], allowMul: true, allowQuad: true, allowAlt: true },
+    hard: { len: [7, 8], magStart: [10, 600], magStep: [5, 40], allowMul: true, allowQuad: true, allowAlt: true }
+};
+
+function buildSeriesSequence(diff) {
+    const cfg = SERIES_DIFF[diff];
+    const len = randInt(cfg.len[0], cfg.len[1]);
+    const types = ['arith'];
+    if (cfg.allowMul) types.push('geo', 'multStep');
+    if (cfg.allowQuad) types.push('quad', 'square', 'cube');
+    if (cfg.allowAlt) types.push('alt');
+    const type = choice(types);
+    const seq = [];
+    let start = randInt(cfg.magStart[0], cfg.magStart[1]);
+    const sign = diff === 'easy' ? 1 : choice([1, 1, -1]);
+
+    if (type === 'arith') {
+        const d = sign * randInt(cfg.magStep[0], cfg.magStep[1]);
+        for (let i = 0; i < len; i++) seq.push(start + i * d);
+    } else if (type === 'geo') {
+        start = randInt(1, diff === 'hard' ? 6 : 9);
+        const r = choice(diff === 'easy' ? [2, 3] : [2, 3, 4]);
+        let v = start;
+        for (let i = 0; i < len; i++) { seq.push(v); v *= r; }
+    } else if (type === 'multStep') {
+        // multiplier increases by 1 each step: x2, x3, x4...
+        start = randInt(1, 5);
+        let v = start; let m = randInt(2, 3);
+        for (let i = 0; i < len; i++) { seq.push(v); v = v * m; m += 1; }
+    } else if (type === 'quad') {
+        // second difference constant
+        const d0 = sign * randInt(cfg.magStep[0], cfg.magStep[1]);
+        const k = choice([1, 2, 3]) * (diff === 'hard' ? choice([1, -1]) : 1);
+        let v = start; let d = d0;
+        for (let i = 0; i < len; i++) { seq.push(v); v += d; d += k; }
+    } else if (type === 'square') {
+        const base = randInt(2, diff === 'hard' ? 20 : 12);
+        for (let i = 0; i < len; i++) seq.push((base + i) * (base + i));
+    } else if (type === 'cube') {
+        const base = randInt(1, diff === 'hard' ? 10 : 6);
+        for (let i = 0; i < len; i++) seq.push((base + i) ** 3);
+    } else if (type === 'alt') {
+        const d1 = sign * randInt(cfg.magStep[0], cfg.magStep[1]);
+        const d2 = -sign * randInt(cfg.magStep[0], Math.max(cfg.magStep[0] + 1, cfg.magStep[1] - 2));
+        let v = start;
+        for (let i = 0; i < len; i++) { seq.push(v); v += (i % 2 === 0 ? d1 : d2); }
+    }
+    return { seq, type };
+}
+
+function generateSeriesQuestion(difficulty) {
+    let seq, type, tries = 0;
+    do { ({ seq, type } = buildSeriesSequence(difficulty)); tries++; }
+    while (seq.some(v => !isFinite(v) || Math.abs(v) > 5_000_000) && tries < 10);
+
+    const asWrongNumber = difficulty !== 'easy' && Math.random() < 0.4;
+
+    if (asWrongNumber) {
+        const idx = randInt(1, seq.length - 2 < 1 ? seq.length - 1 : seq.length - 2);
+        const original = seq[idx];
+        const scale = Math.max(2, Math.abs(original) * 0.08);
+        let corrupted = original + choice([1, -1]) * randInt(Math.max(1, Math.round(scale * 0.3)), Math.max(2, Math.round(scale)));
+        if (corrupted === original) corrupted += 3;
+        const display = seq.slice();
+        display[idx] = corrupted;
+
+        const optionSet = new Set([corrupted]);
+        display.forEach((v, i) => { if (i !== 0 && i !== display.length - 1) optionSet.add(v); });
+        let guard = 0;
+        while (optionSet.size < 4 && guard < 50) {
+            guard++;
+            optionSet.add(corrupted + choice([1, -1]) * randInt(1, Math.max(2, Math.round(scale)) + guard));
+        }
+        // corrupted MUST survive into the final 4 — pick 3 distinct others alongside it,
+        // rather than shuffle+slice the whole (possibly larger) candidate set.
+        const others = shuffle(Array.from(optionSet).filter(v => v !== corrupted)).slice(0, 3);
+        const options = shuffle([corrupted, ...others]);
+        return {
+            q: `Find the WRONG number in the series:\n${display.join(', ')}`,
+            options: options.map(String),
+            answer: String(corrupted),
+            numeric: true, rawAnswer: corrupted,
+            sig: `wrong|${type}|${display.join(',')}`
+        };
+    }
+
+    const blankAtEnd = difficulty === 'easy' || Math.random() < 0.5;
+    const blankIdx = blankAtEnd ? seq.length - 1 : randInt(2, seq.length - 2);
+    const answerVal = seq[blankIdx];
+    const display = seq.map((v, i) => i === blankIdx ? '?' : v);
+    const scale = Math.max(2, Math.abs(answerVal) * 0.12 + 5);
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(answerVal, scale, 0);
+    return {
+        q: `Find the missing number in the series:\n${display.join(', ')}`,
+        options, answer, numeric, rawAnswer,
+        sig: `missing|${type}|${display.join(',')}`
+    };
+}
+
+// ===================================================================
+// SIMPLIFICATION
+// ===================================================================
+const SIMPLIFY_DIFF = {
+    easy: { atoms: 4, intMax: 20, useDecimal: false, useFrac: false, usePow: false, brackets: 1 },
+    medium: { atoms: 6, intMax: 60, useDecimal: true, useFrac: true, usePow: true, brackets: 2 },
+    hard: { atoms: 8, intMax: 150, useDecimal: true, useFrac: true, usePow: true, brackets: 3 }
+};
+
+function buildAtom(cfg) {
+    const roll = Math.random();
+    if (cfg.usePow && roll < 0.12) {
+        const n = randInt(2, 12);
+        return { text: `${n}\u00B2`, val: n * n };
+    }
+    if (cfg.usePow && roll < 0.20) {
+        const n = randInt(2, 12);
+        return { text: `\u221A${n * n}`, val: n };
+    }
+    if (cfg.useFrac && roll < 0.35) {
+        const d = randInt(2, 12);
+        const n = randInt(1, d * 3);
+        return { text: `(${n}/${d})`, val: n / d };
+    }
+    if (cfg.useDecimal && roll < 0.5) {
+        const v = randFloat(1, cfg.intMax / 4, 1);
+        return { text: fmtNum(v, 1), val: v };
+    }
+    const n = randInt(1, cfg.intMax);
+    return { text: String(n), val: n };
+}
+
+function generateSimplificationQuestion(difficulty) {
+    const cfg = SIMPLIFY_DIFF[difficulty];
+    const nAtoms = cfg.atoms + randInt(-1, 1);
+    const atoms = [];
+    for (let i = 0; i < nAtoms; i++) atoms.push(buildAtom(cfg));
+    const opsPool = ['+', '-', '\u00D7', '\u00F7'];
+    const ops = [];
+    for (let i = 0; i < nAtoms - 1; i++) {
+        // avoid division by an atom that would create ugly non-terminating decimals too often
+        ops.push(choice(opsPool));
+    }
+
+    // build display + eval tokens in parallel
+    const disp = [atoms[0].text];
+    const evalParts = [String(atoms[0].val)];
+    for (let i = 0; i < ops.length; i++) {
+        const op = ops[i];
+        const jsOp = op === '\u00D7' ? '*' : (op === '\u00F7' ? '/' : op);
+        disp.push(op, atoms[i + 1].text);
+        evalParts.push(jsOp, String(atoms[i + 1].val));
+    }
+
+    // wrap N contiguous segments in brackets for structure
+    let dispTokens = disp.slice();
+    let evalTokens = evalParts.slice();
+    const numBrackets = Math.min(cfg.brackets, Math.floor(nAtoms / 3));
+    for (let b = 0; b < numBrackets; b++) {
+        const maxStart = dispTokens.length - 3;
+        if (maxStart < 0) break;
+        const start = randInt(0, Math.floor(maxStart / 2)) * 2; // land on an atom index (even positions)
+        const spanAtoms = 2; // wrap 2 atoms + 1 operator between them
+        const end = start + spanAtoms * 2;
+        if (end >= dispTokens.length) continue;
+        dispTokens[start] = '(' + dispTokens[start];
+        dispTokens[end] = dispTokens[end] + ')';
+        evalTokens[start] = '(' + evalTokens[start];
+        evalTokens[end] = evalTokens[end] + ')';
+    }
+
+    const displayStr = dispTokens.join(' ');
+    const evalStr = evalTokens.join(' ');
+    let value;
+    try {
+        // Safe: evalStr is built entirely from our own generated numbers/operators above.
+        value = Function('"use strict"; return (' + evalStr + ')')();
+    } catch (e) {
+        value = atoms.reduce((a, x) => a + x.val, 0);
+    }
+    if (!isFinite(value)) value = atoms[0].val;
+    const dec = Number.isInteger(Math.round(value * 100) / 100) ? 0 : 2;
+    const scale = Math.max(3, Math.abs(value) * 0.15 + 4);
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, scale, dec);
+    return {
+        q: `Simplify:\n${displayStr} = ?`,
+        options, answer, numeric, rawAnswer,
+        sig: `simp|${displayStr}`
+    };
+}
+
+// ===================================================================
+// SIGN / NUMBER INTERCHANGE PUZZLES (classic SSC "which two signs
+// should be interchanged" family — three variants)
+// ===================================================================
+const OPS_POOL = ['+', '-', '\u00D7', '\u00F7'];
+function evalOpsChain(numbers, ops) {
+    // BODMAS: do all × and ÷ left-to-right first, then + and − left-to-right
+    let nums = numbers.slice();
+    let operators = ops.slice();
+    // pass 1: × ÷
+    for (let i = 0; i < operators.length;) {
+        if (operators[i] === '\u00D7' || operators[i] === '\u00F7') {
+            const a = nums[i], b = nums[i + 1];
+            const r = operators[i] === '\u00D7' ? a * b : a / b;
+            nums.splice(i, 2, r);
+            operators.splice(i, 1);
+        } else i++;
+    }
+    // pass 2: + -
+    let result = nums[0];
+    for (let i = 0; i < operators.length; i++) {
+        result = operators[i] === '+' ? result + nums[i + 1] : result - nums[i + 1];
+    }
+    return result;
+}
+function randSmallOperands(count, difficulty) {
+    const maxV = difficulty === 'hard' ? 60 : difficulty === 'medium' ? 40 : 25;
+    const out = [];
+    for (let i = 0; i < count; i++) out.push(randInt(2, maxV));
+    return out;
+}
+function hasAdjacentMulDiv(ops) {
+    for (let i = 0; i < ops.length - 1; i++) {
+        const a = ops[i], b = ops[i + 1];
+        if ((a === '\u00D7' || a === '\u00F7') && (b === '\u00D7' || b === '\u00F7')) return true;
+    }
+    return false;
+}
+// Builds an operator/operand chain where every × and ÷ lands on clean,
+// evenly-divisible numbers — real exam papers never show a puzzle whose
+// "correct" equation itself works out to a messy decimal.
+function buildCleanChain(opCount, difficulty) {
+    const maxV = difficulty === 'hard' ? 30 : difficulty === 'medium' ? 22 : 14;
+    let ops, guard = 0;
+    do { ops = shuffle(OPS_POOL).slice(0, opCount); guard++; }
+    while (hasAdjacentMulDiv(ops) && guard < 40);
+    const numbers = [randInt(2, maxV)];
+    for (let k = 0; k < opCount; k++) {
+        const op = ops[k];
+        if (op === '\u00F7') {
+            const divisor = randInt(2, 9);
+            const multiple = randInt(2, Math.max(2, Math.floor(maxV / divisor)));
+            numbers[k] = divisor * multiple; // overwrite: this slot was still a free choice
+            numbers.push(divisor);
+        } else if (op === '\u00D7') {
+            numbers.push(randInt(2, Math.max(2, Math.floor(maxV / 3))));
+        } else {
+            numbers.push(randInt(2, maxV));
+        }
+    }
+    return { numbers, ops };
+}
+
+// ---- Variant 1: interchange TWO SIGNS only ----
+function generateSignSwapQuestion(difficulty) {
+    const opCount = difficulty === 'easy' ? 3 : 4;
+    const { numbers, ops: correctOps } = buildCleanChain(opCount, difficulty);
+    let target = evalOpsChain(numbers, correctOps);
+    target = Math.round(target * 100) / 100;
+
+    const i = randInt(0, opCount - 1);
+    let j = randInt(0, opCount - 1);
+    while (j === i) j = randInt(0, opCount - 1);
+    const displayOps = correctOps.slice();
+    [displayOps[i], displayOps[j]] = [displayOps[j], displayOps[i]];
+
+    const exprStr = numbers.map((n, idx) => idx === 0 ? String(n) : `${displayOps[idx - 1]} ${n}`).join(' ');
+    const correctPairStr = `${displayOps[i]} and ${displayOps[j]}`;
+
+    const optionSet = new Set([correctPairStr]);
+    let guard = 0;
+    while (optionSet.size < 4 && guard < 30) {
+        guard++;
+        const a = randInt(0, opCount - 1); let b = randInt(0, opCount - 1);
+        if (a === b) continue;
+        optionSet.add(`${displayOps[a]} and ${displayOps[b]}`);
+    }
+    return {
+        q: `Find out the two signs to be interchanged to make the following equation correct:\n${exprStr} = ${fmtNum(target)}`,
+        options: shuffle(Array.from(optionSet)).slice(0, 4),
+        answer: correctPairStr,
+        sig: `signswap|${exprStr}|${target}`
+    };
+}
+
+// ---- Variant 2: fixed sign-substitution cipher, pick the TRUE equation ----
+function derangeOps() {
+    let perm;
+    let guard = 0;
+    do {
+        perm = shuffle(OPS_POOL);
+        guard++;
+    } while (perm.some((p, i) => p === OPS_POOL[i]) && guard < 50);
+    const map = {};
+    OPS_POOL.forEach((o, i) => { map[o] = perm[i]; });
+    return map;
+}
+function generateSignMappingQuestion(difficulty) {
+    const opCount = difficulty === 'easy' ? 3 : 4;
+    const mapping = derangeOps();
+    const mapDesc = OPS_POOL.map(o => `${o} is changed to ${mapping[o]}`).join('\n');
+
+    const correctIdx = randInt(0, 3);
+    const optionStrs = [];
+    for (let opt = 0; opt < 4; opt++) {
+        // the numbers/ops shown are built to be clean under the ORIGINAL symbols;
+        // what matters is that the mapped (applied) evaluation is what's clean for the correct option
+        let numbers, ops;
+        if (opt === correctIdx) {
+            // construct so the MAPPED ops produce a clean chain, then unmap to get displayed ops
+            const inverseMap = {};
+            Object.keys(mapping).forEach(k => { inverseMap[mapping[k]] = k; });
+            const built = buildCleanChain(opCount, difficulty);
+            numbers = built.numbers;
+            ops = built.ops.map(o => inverseMap[o]);
+        } else {
+            const built = buildCleanChain(opCount, difficulty);
+            numbers = built.numbers; ops = built.ops;
+        }
+        const mappedOps = ops.map(o => mapping[o]);
+        let trueVal = evalOpsChain(numbers, mappedOps);
+        if (!isFinite(trueVal)) trueVal = 0;
+        trueVal = Math.round(trueVal * 100) / 100;
+        let claimed = trueVal;
+        if (opt !== correctIdx) {
+            let delta = 0;
+            while (delta === 0) delta = choice([1, -1]) * randInt(2, 15);
+            claimed = trueVal + delta;
+        }
+        const exprStr = numbers.map((n, idx) => idx === 0 ? String(n) : `${ops[idx - 1]} ${n}`).join(' ');
+        optionStrs.push(`${exprStr} = ${fmtNum(claimed)}`);
+    }
+    return {
+        q: `If the following mathematical signs are changed as given below, select the option which represents the correct equation:\n${mapDesc}`,
+        options: optionStrs,
+        answer: optionStrs[correctIdx],
+        sig: `signmap|${optionStrs.join('||')}`
+    };
+}
+
+// ---- Variant 3: interchange TWO SIGNS *and* TWO NUMBERS ----
+function generateSignNumberSwapQuestion(difficulty) {
+    const opCount = 4; // 5 operands, matches the classic exam pattern
+    const { numbers, ops: correctOps } = buildCleanChain(opCount, difficulty);
+    let target = evalOpsChain(numbers, correctOps);
+    target = Math.round(target * 100) / 100;
+
+    const p = randInt(0, opCount); let q2 = randInt(0, opCount), guardPQ = 0;
+    while ((q2 === p || numbers[q2] === numbers[p]) && guardPQ < 20) { q2 = randInt(0, opCount); guardPQ++; }
+    const displayNumbers = numbers.slice();
+    [displayNumbers[p], displayNumbers[q2]] = [displayNumbers[q2], displayNumbers[p]];
+
+    const i = randInt(0, opCount - 1); let j = randInt(0, opCount - 1);
+    while (j === i) j = randInt(0, opCount - 1);
+    const displayOps = correctOps.slice();
+    [displayOps[i], displayOps[j]] = [displayOps[j], displayOps[i]];
+
+    const exprStr = displayNumbers.map((n, idx) => idx === 0 ? String(n) : `${displayOps[idx - 1]} ${n}`).join(' ');
+    const correctStr = `${displayNumbers[p]} and ${displayNumbers[q2]}, ${displayOps[i]} and ${displayOps[j]}`;
+
+    const optionSet = new Set([correctStr]);
+    let guard = 0;
+    while (optionSet.size < 4 && guard < 40) {
+        guard++;
+        const a = randInt(0, opCount); let b = randInt(0, opCount);
+        if (a === b || displayNumbers[a] === displayNumbers[b]) continue;
+        const k = randInt(0, opCount - 1); let l = randInt(0, opCount - 1);
+        if (k === l) continue;
+        optionSet.add(`${displayNumbers[a]} and ${displayNumbers[b]}, ${displayOps[k]} and ${displayOps[l]}`);
+    }
+    return {
+        q: `Which two signs and two numbers should be interchanged to make the following equation correct?\n${exprStr} = ${fmtNum(target)}`,
+        options: shuffle(Array.from(optionSet)).slice(0, 4),
+        answer: correctStr,
+        sig: `signnumswap|${exprStr}|${target}`
+    };
+}
+
+
+function formatQuadratic(varSym, a, r1, r2) {
+    const sum = r1 + r2, prod = r1 * r2;
+    const b = -a * sum, c = a * prod;
+    let s = (a === 1 ? '' : a) + varSym + '\u00B2';
+    if (b !== 0) s += (b > 0 ? ` + ${b}${varSym}` : ` - ${Math.abs(b)}${varSym}`);
+    if (c !== 0) s += (c > 0 ? ` + ${c}` : ` - ${Math.abs(c)}`);
+    s += ' = 0';
+    return s;
+}
+
+const QUAD_DIFF = {
+    easy: { range: 10, aChoices: [1] },
+    medium: { range: 16, aChoices: [1, 1, 2] },
+    hard: { range: 24, aChoices: [1, 2, 3] }
+};
+
+function pickDistinctPair(range) {
+    let r1 = randInt(-range, range);
+    let r2 = randInt(-range, range);
+    return [r1, r2];
+}
+
+function generateQuadraticQuestion(difficulty) {
+    const cfg = QUAD_DIFF[difficulty];
+    const [r1, r2] = pickDistinctPair(cfg.range);
+    let s1, s2;
+    if (Math.random() < 0.55) {
+        // draw y-roots from an overlapping range so the relation isn't trivially always x>y
+        const lo = Math.min(r1, r2) - randInt(0, 4);
+        const hi = Math.max(r1, r2) + randInt(0, 4);
+        s1 = randInt(lo, hi); s2 = randInt(lo, hi);
+    } else {
+        [s1, s2] = pickDistinctPair(cfg.range);
+    }
+    const a1 = choice(cfg.aChoices);
+    const a2 = choice(cfg.aChoices);
+
+    const xs = [r1, r2], ys = [s1, s2];
+    const setEq = xs.slice().sort((a, b) => a - b).join(',') === ys.slice().sort((a, b) => a - b).join(',');
+    const allGT = xs.every(x => ys.every(y => x > y));
+    const allGE = xs.every(x => ys.every(y => x >= y));
+    const allLT = xs.every(x => ys.every(y => x < y));
+    const allLE = xs.every(x => ys.every(y => x <= y));
+
+    let answer;
+    if (setEq) answer = 'x = y';
+    else if (allGT) answer = 'x > y';
+    else if (allGE) answer = 'x \u2265 y';
+    else if (allLT) answer = 'x < y';
+    else if (allLE) answer = 'x \u2264 y';
+    else answer = 'Relationship cannot be established';
+
+    const options = ['x > y', 'x \u2265 y', 'x < y', 'x \u2264 y', 'x = y', 'Relationship cannot be established'];
+    // Trim to a clean 5-option classic set: keep the correct one + 4 sensible others
+    let pool = options.filter(o => o !== answer);
+    const chosenWrong = shuffle(pool).slice(0, 4);
+    const finalOptions = shuffle([answer, ...chosenWrong]);
+
+    const eq1 = formatQuadratic('x', a1, r1, r2);
+    const eq2 = formatQuadratic('y', a2, s1, s2);
+
+    return {
+        q: `I. ${eq1}\nII. ${eq2}\n\nSolve both equations and find the relation between x and y:`,
+        options: finalOptions,
+        answer,
+        sig: `quad|${eq1}|${eq2}`
+    };
+}
+
+// ===================================================================
+// FRACTION (customizable)
+// ===================================================================
+function randFraction(numMax, denMax, allowImproper) {
+    const d = randInt(2, denMax);
+    const n = allowImproper ? randInt(1, d * 3) : randInt(1, d - 1 < 1 ? d : d - 1);
+    return [n, d];
+}
+
+function generateFractionQuestion(cfg) {
+    // cfg: { ops: [...], mixed: bool, denMax, numMax }
+    const ops = cfg.ops && cfg.ops.length ? cfg.ops : ['add'];
+    const op = choice(ops);
+    const denMax = cfg.denMax || 12;
+    const useMixed = !!cfg.mixed;
+
+    if (op === 'simplify') {
+        const g = randInt(2, 9);
+        const [rn, rd] = randFraction(1, Math.max(4, Math.floor(denMax / g)) || 4, true);
+        const n = rn * g, d = rd * g;
+        const [sn, sd] = simplifyFrac(n, d);
+        const correctStr = fracToStr(sn, sd);
+        const wrongs = new Set([`${n}/${d}`]);
+        const opts = [correctStr];
+        while (opts.length < 4) {
+            const jitter = randInt(1, 3);
+            const cand = fracToStr(sn + choice([1, -1]) * jitter, sd);
+            if (!opts.includes(cand)) opts.push(cand);
+        }
+        return {
+            q: `Simplify to lowest terms: ${n}/${d} = ?`,
+            options: shuffle(opts), answer: correctStr,
+            sig: `fracsimp|${n}/${d}`
+        };
+    }
+
+    if (op === 'compare') {
+        const [n1, d1] = randFraction(1, denMax, true);
+        const [n2, d2] = randFraction(1, denMax, true);
+        const v1 = n1 / d1, v2 = n2 / d2;
+        const answer = Math.abs(v1 - v2) < 1e-9 ? '=' : (v1 > v2 ? '>' : '<');
+        const f1 = useMixed ? fracToMixedStr(n1, d1) : fracToStr(n1, d1);
+        const f2 = useMixed ? fracToMixedStr(n2, d2) : fracToStr(n2, d2);
+        return {
+            q: `Compare: ${f1}  ____  ${f2}`,
+            options: shuffle(['>', '<', '=']),
+            answer,
+            sig: `fraccmp|${f1}|${f2}`
+        };
+    }
+
+    // add / subtract / multiply / divide
+    const [n1, d1] = randFraction(1, denMax, true);
+    const [n2, d2] = randFraction(1, denMax, true);
+    let rn, rd, symbol;
+    if (op === 'add') { rn = n1 * d2 + n2 * d1; rd = d1 * d2; symbol = '+'; }
+    else if (op === 'subtract') { rn = n1 * d2 - n2 * d1; rd = d1 * d2; symbol = '\u2212'; }
+    else if (op === 'multiply') { rn = n1 * n2; rd = d1 * d2; symbol = '\u00D7'; }
+    else { rn = n1 * d2; rd = d1 * n2; symbol = '\u00F7'; if (rd === 0) rd = d1; }
+
+    const [sn, sd] = simplifyFrac(rn, rd);
+    const formatter = useMixed ? ((n, d) => fracToMixedStr(n, d)) : ((n, d) => fracToStr(n, d));
+    const correctStr = formatter(sn, sd);
+    const opts = new Set([correctStr]);
+    let guard = 0;
+    while (opts.size < 4 && guard < 40) {
+        guard++;
+        const jn = sn + choice([1, -1, 2, -2]) * randInt(1, 3);
+        const cand = formatter(jn, sd);
+        opts.add(cand);
+    }
+    const f1 = formatter(n1, d1), f2 = formatter(n2, d2);
+    return {
+        q: `${f1}  ${symbol}  ${f2} = ?`,
+        options: shuffle(Array.from(opts)).slice(0, 4),
+        answer: correctStr,
+        sig: `frac|${op}|${f1}|${f2}`
+    };
+}
+
+// ===================================================================
+// PERCENTAGE (customizable)
+// ===================================================================
+function generatePercentageQuestion(cfg) {
+    const types = cfg.types && cfg.types.length ? cfg.types : ['percentOf'];
+    const type = choice(types);
+    const numMax = cfg.numMax || 800;
+    const pctChoices = [5, 10, 12.5, 15, 20, 25, 30, 33.33, 40, 45, 50, 60, 62.5, 65, 70, 75, 80, 87.5, 90];
+
+    if (type === 'percentOf') {
+        const base = randInt(20, numMax);
+        const pct = choice(pctChoices);
+        const value = base * pct / 100;
+        const dec = Number.isInteger(value) ? 0 : 2;
+        const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(3, value * 0.15), dec);
+        return { q: `${fmtNum(pct)}% of ${base} = ?`, options, answer, numeric, rawAnswer, sig: `pctof|${pct}|${base}` };
+    }
+    if (type === 'percentChange') {
+        const base = randInt(50, numMax);
+        const pct = choice(pctChoices.filter(p => p <= 90));
+        const isIncrease = Math.random() < 0.5;
+        const value = isIncrease ? base * (1 + pct / 100) : base * (1 - pct / 100);
+        const dec = Number.isInteger(value) ? 0 : 2;
+        const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(3, value * 0.12), dec);
+        return {
+            q: `${base} is ${isIncrease ? 'increased' : 'decreased'} by ${fmtNum(pct)}%. Find the new value.`,
+            options, answer, numeric, rawAnswer, sig: `pctchg|${base}|${pct}|${isIncrease}`
+        };
+    }
+    if (type === 'expressAsPercent') {
+        const d = choice([2, 4, 5, 8, 10, 20, 25, 40, 50]);
+        const n = randInt(1, d);
+        const value = (n / d) * 100;
+        const dec = Number.isInteger(value) ? 0 : 2;
+        const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(3, value * 0.15), dec);
+        return { q: `Express ${n}/${d} as a percentage.`, options: options.map(o => o + '%'), answer: answer + '%', numeric: true, rawAnswer, answerSuffix: '%', sig: `pctexp|${n}/${d}` };
+    }
+    // findOriginal (reverse percentage)
+    const pct = choice(pctChoices.filter(p => p >= 10 && p <= 90));
+    const original = randInt(40, numMax);
+    const changedVal = Math.round(original * (1 + pct / 100));
+    const dec = 0;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(original, Math.max(3, original * 0.12), dec);
+    return {
+        q: `After increasing a number by ${fmtNum(pct)}%, it becomes ${changedVal}. Find the original number (approx).`,
+        options, answer, numeric, rawAnswer, sig: `pctorig|${changedVal}|${pct}`
+    };
+}
+
+// ===================================================================
+// TRIGONOMETRY (0-360)
+// ===================================================================
+const TRIG_ANGLES = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360];
+const TRIG_EXACT = {
+    // value at reference-angle level, sign handled separately per quadrant
+    0: { sin: 0, cos: 1, tan: 0 },
+    30: { sin: 0.5, cos: 0.8660254037844387, tan: 0.5773502691896258 },
+    45: { sin: 0.7071067811865476, cos: 0.7071067811865476, tan: 1 },
+    60: { sin: 0.8660254037844387, cos: 0.5, tan: 1.7320508075688772 },
+    90: { sin: 1, cos: 0, tan: Infinity }
+};
+function trigRefAngle(deg) {
+    const d = ((deg % 360) + 360) % 360;
+    if (d <= 90) return d;
+    if (d <= 180) return 180 - d;
+    if (d <= 270) return d - 180;
+    return 360 - d;
+}
+function trigQuadrant(deg) {
+    const d = ((deg % 360) + 360) % 360;
+    if (d === 0 || d === 360) return 0;
+    if (d < 90) return 1;
+    if (d === 90) return 90;
+    if (d < 180) return 2;
+    if (d === 180) return 180;
+    if (d < 270) return 3;
+    if (d === 270) return 270;
+    return 4;
+}
+function trigValue(func, deg) {
+    const d = ((deg % 360) + 360) % 360;
+    const ref = trigRefAngle(d);
+    const base = TRIG_EXACT[ref] || TRIG_EXACT[trigRefAngle(ref)];
+    let raw = base[func === 'cosec' ? 'sin' : func === 'sec' ? 'cos' : func === 'cot' ? 'tan' : func];
+    if (func === 'cosec') raw = raw === 0 ? Infinity : 1 / raw;
+    if (func === 'sec') raw = raw === 0 ? Infinity : 1 / raw;
+    if (func === 'cot') raw = raw === 0 ? Infinity : 1 / raw;
+
+    const q = trigQuadrant(d);
+    // sign rules (CAST): quadrant1 all+; quad2 sin/cosec+; quad3 tan/cot+; quad4 cos/sec+
+    const isPos = (fn) => {
+        if (q === 0 || q === 180 || q === 360) {
+            if (fn === 'sin' || fn === 'cosec') return d === 0 || d === 360; // 0 at 0/180/360 handled via raw already
+            return true;
+        }
+        if (q === 90) return true;
+        if (q === 270) { if (fn === 'cos' || fn === 'sec') return true; return false; }
+        if (q === 1) return true;
+        if (q === 2) return fn === 'sin' || fn === 'cosec';
+        if (q === 3) return fn === 'tan' || fn === 'cot';
+        if (q === 4) return fn === 'cos' || fn === 'sec';
+        return true;
+    };
+    if (raw === 0) return 0;
+    if (!isFinite(raw)) return isPos(func) ? Infinity : -Infinity;
+    return isPos(func) ? Math.abs(raw) : -Math.abs(raw);
+}
+function trigDisplayVal(v) {
+    if (v === Infinity) return 'undefined (\u221E)';
+    if (v === -Infinity) return 'undefined (-\u221E)';
+    if (Math.abs(v) < 1e-9) return '0';
+    // try to express as nice fraction / surd text for common values
+    const table = [
+        [0.5, '1/2'], [-0.5, '-1/2'],
+        [1, '1'], [-1, '-1'],
+        [0.7071067811865476, '\u221A2/2'], [-0.7071067811865476, '-\u221A2/2'],
+        [0.8660254037844387, '\u221A3/2'], [-0.8660254037844387, '-\u221A3/2'],
+        [1.7320508075688772, '\u221A3'], [-1.7320508075688772, '-\u221A3'],
+        [0.5773502691896258, '1/\u221A3'], [-0.5773502691896258, '-1/\u221A3'],
+        [1.4142135623730951, '\u221A2'], [-1.4142135623730951, '-\u221A2'],
+        [2, '2'], [-2, '-2']
+    ];
+    for (const [num, str] of table) if (Math.abs(v - num) < 1e-6) return str;
+    return fmtNum(v, 2);
+}
+
+function generateTrigQuestion(cfg) {
+    const angles = (cfg.angles && cfg.angles.length) ? cfg.angles : TRIG_ANGLES;
+    const funcs = (cfg.funcs && cfg.funcs.length) ? cfg.funcs : ['sin', 'cos', 'tan'];
+    let deg, func, v, tries = 0;
+    do {
+        deg = choice(angles);
+        func = choice(funcs);
+        v = trigValue(func, deg);
+        tries++;
+    } while (!isFinite(v) && tries < 15);
+    const correct = trigDisplayVal(v);
+
+    // distractor strategy: nearby standard values / sign flips / reference-angle mixups
+    const candidates = new Set([correct]);
+    const nearbyAngles = angles.filter(a => a !== deg);
+    let guard = 0;
+    while (candidates.size < 4 && guard < 30) {
+        guard++;
+        const pick = Math.random();
+        let cand;
+        if (pick < 0.34 && isFinite(v)) {
+            cand = trigDisplayVal(-v); // sign flip
+        } else if (pick < 0.67 && nearbyAngles.length) {
+            const otherDeg = choice(nearbyAngles);
+            cand = trigDisplayVal(trigValue(func, otherDeg));
+        } else {
+            const otherFunc = choice(funcs.filter(f => f !== func).length ? funcs.filter(f => f !== func) : ['sin', 'cos', 'tan']);
+            cand = trigDisplayVal(trigValue(otherFunc, deg));
+        }
+        if (isFinite(v) ? !cand.includes('undefined') : true) candidates.add(cand);
+    }
+    while (candidates.size < 4) candidates.add(correct + ' ');
+
+    return {
+        q: `Find the value of ${func}(${deg}\u00B0)`,
+        options: shuffle(Array.from(candidates)).slice(0, 4),
+        answer: correct,
+        sig: `trig|${func}|${deg}`
+    };
+}
+
+// ===================================================================
+// SQUARES / CUBES / CUBE ROOTS
+// ===================================================================
+function generateSquareQuestion(cfg) {
+    const n = randInt(cfg.min || 2, cfg.max || 50);
+    const value = n * n;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(4, value * 0.06), 0);
+    return { q: `${n}\u00B2 = ?`, options, answer, numeric, rawAnswer, sig: `sq|${n}` };
+}
+function generateCubeQuestion(cfg) {
+    const n = randInt(cfg.min || 2, cfg.max || 30);
+    const value = n * n * n;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(6, value * 0.08), 0);
+    return { q: `${n}\u00B3 = ?`, options, answer, numeric, rawAnswer, sig: `cube|${n}` };
+}
+function generateCuberootQuestion(cfg) {
+    const n = randInt(cfg.min || 2, cfg.max || 30);
+    const value = n * n * n;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(n, Math.max(2, n * 0.15), 0);
+    return { q: `\u221B${value} = ?  (cube root of ${value})`, options, answer, numeric, rawAnswer, sig: `cbrt|${n}` };
+}
+
+// ===================================================================
+// ADDITION / SUBTRACTION / MULTIPLICATION / DIVISION / DI-ADDITION
+// ===================================================================
+function randNDigit(digits, allowDecimal) {
+    const min = Math.pow(10, digits - 1);
+    const max = Math.pow(10, digits) - 1;
+    let v = randInt(min, max);
+    if (allowDecimal && Math.random() < 0.4) {
+        v = v / 10 + randInt(0, 9) / 10;
+        v = Math.round(v * 10) / 10;
+    }
+    return v;
+}
+
+function generateAdditionQuestion(cfg) {
+    const d1 = randInt(cfg.digitsMin || 2, cfg.digitsMax || 4);
+    const d2 = randInt(cfg.digitsMin || 2, cfg.digitsMax || 4);
+    const a = randNDigit(d1, cfg.decimals);
+    const b = randNDigit(d2, cfg.decimals);
+    const value = Math.round((a + b) * 100) / 100;
+    const dec = cfg.decimals ? 1 : 0;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(5, value * 0.05), dec);
+    return { q: `${fmtNum(a, 1)} + ${fmtNum(b, 1)} = ?`, options, answer, numeric, rawAnswer, sig: `add|${a}|${b}` };
+}
+
+function generateSubtractionQuestion(cfg) {
+    const d1 = randInt(cfg.digitsMin || 2, cfg.digitsMax || 4);
+    let a = randNDigit(d1, cfg.decimals);
+    let b = randNDigit(randInt(cfg.digitsMin || 2, d1), cfg.decimals);
+    if (!cfg.allowNegative && b > a) [a, b] = [b, a];
+    const value = Math.round((a - b) * 100) / 100;
+    const dec = cfg.decimals ? 1 : 0;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(5, Math.abs(value) * 0.08 + 3), dec);
+    return { q: `${fmtNum(a, 1)} \u2212 ${fmtNum(b, 1)} = ?`, options, answer, numeric, rawAnswer, sig: `sub|${a}|${b}` };
+}
+
+function generateMultiplicationQuestion(cfg) {
+    const d1 = cfg.digits1 || randInt(1, 3);
+    const d2 = cfg.digits2 || randInt(1, 2);
+    const a = randInt(Math.pow(10, d1 - 1), Math.pow(10, d1) - 1);
+    const b = randInt(Math.pow(10, d2 - 1), Math.pow(10, d2) - 1);
+    const value = a * b;
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(8, value * 0.06), 0);
+    return { q: `${a} \u00D7 ${b} = ?`, options, answer, numeric, rawAnswer, sig: `mul|${a}|${b}` };
+}
+
+function generateDivisionQuestion(cfg) {
+    const dDigits = cfg.divisorDigits || randInt(1, 2);
+    const divisor = randInt(Math.pow(10, dDigits - 1) + 1, Math.pow(10, dDigits) - 1);
+    const qDigits = cfg.dividendDigits ? Math.max(1, cfg.dividendDigits - dDigits) : randInt(1, 3);
+    const quotient = randInt(Math.pow(10, qDigits - 1), Math.pow(10, qDigits) - 1);
+    let dividend = divisor * quotient;
+    let remainder = 0;
+    if (!cfg.exactOnly) {
+        remainder = randInt(0, divisor - 1);
+        dividend += remainder;
+    }
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(quotient, Math.max(2, quotient * 0.15 + 1), 0);
+    const label = cfg.exactOnly ? `${dividend} \u00F7 ${divisor} = ?` : `${dividend} \u00F7 ${divisor} = ? (quotient, ignore remainder)`;
+    return { q: label, options, answer, numeric, rawAnswer, sig: `div|${dividend}|${divisor}` };
+}
+
+function generateDIAdditionQuestion(cfg) {
+    const count = randInt(cfg.countMin || 3, cfg.countMax || 6);
+    const digits = cfg.digits || randInt(2, 5);
+    const nums = [];
+    for (let i = 0; i < count; i++) nums.push(randInt(Math.pow(10, digits - 1), Math.pow(10, digits) - 1));
+    const value = nums.reduce((a, b) => a + b, 0);
+    const { options, answer, numeric, rawAnswer } = mcqFromNumeric(value, Math.max(10, value * 0.03), 0);
+    return { q: `Add the following numbers:\n${nums.join(' + ')} = ?`, options, answer, numeric, rawAnswer, sig: `di|${nums.join(',')}` };
+}
+
+// ===================================================================
+// MISCELLANEOUS MIX
+// ===================================================================
+let __lastMiscSubtype = null;
+function generateMiscQuestion(difficulty) {
+    const subtypes = ['series', 'simplification', 'quadratic', 'percentage', 'fraction', 'square', 'cube', 'trig', 'signswap', 'signmapping', 'signnumswap'];
+    let pool = subtypes.filter(s => s !== __lastMiscSubtype);
+    const subtype = choice(pool);
+    __lastMiscSubtype = subtype;
+    switch (subtype) {
+        case 'series': return generateSeriesQuestion(difficulty);
+        case 'simplification': return generateSimplificationQuestion(difficulty);
+        case 'quadratic': return generateQuadraticQuestion(difficulty);
+        case 'percentage': return generatePercentageQuestion({ types: ['percentOf', 'percentChange', 'expressAsPercent'], numMax: difficulty === 'hard' ? 900 : 400 });
+        case 'fraction': return generateFractionQuestion({ ops: ['add', 'subtract', 'multiply', 'compare'], mixed: difficulty !== 'easy', denMax: difficulty === 'hard' ? 16 : 10 });
+        case 'square': return generateSquareQuestion({ min: 2, max: difficulty === 'hard' ? 40 : 25 });
+        case 'cube': return generateCubeQuestion({ min: 2, max: difficulty === 'hard' ? 25 : 15 });
+        case 'trig': return generateTrigQuestion({ angles: TRIG_ANGLES, funcs: ['sin', 'cos', 'tan'] });
+        case 'signswap': return generateSignSwapQuestion(difficulty);
+        case 'signmapping': return generateSignMappingQuestion(difficulty);
+        case 'signnumswap': return generateSignNumberSwapQuestion(difficulty);
+        default: return generateSeriesQuestion(difficulty);
+    }
+}
+    </script>
+
+    <script>
+// ===================================================================
+// MATHS SPEED BOOSTER — app logic
+// ===================================================================
+
+// ---------------- dark mode / nav shell (same pattern as sibling apps) ----------------
+function isDarkMode() { return document.documentElement.classList.contains('dark'); }
+function toggleDarkMode() {
+    const isDark = !isDarkMode();
+    document.documentElement.classList.add('theme-transition');
+    document.documentElement.classList.toggle('dark', isDark);
+    try { localStorage.setItem('tukka_dark_mode', isDark ? 'true' : 'false'); } catch (e) {}
+    document.getElementById('dark-mode-icon').className = isDark ? 'fa-solid fa-moon text-indigo-200 text-[10px]' : 'fa-solid fa-sun text-amber-500 text-[10px]';
+    document.getElementById('dark-mode-knob').style.transform = isDark ? 'translateX(20px)' : 'translateX(0)';
+    document.getElementById('dark-mode-toggle').classList.toggle('bg-slate-200', !isDark);
+    try { window.parent.postMessage({ type: 'tukka:darkModeChanged', dark: isDark }, '*'); } catch (e) {}
+    setTimeout(() => document.documentElement.classList.remove('theme-transition'), 400);
+}
+function tukkaSwitchCategory() { try { window.parent.postMessage({ type: 'tukka:openSwitcher' }, '*'); } catch (e) {} }
+function toggleMobileNav() { document.body.classList.toggle('nav-open'); }
+function closeMobileNav() { document.body.classList.remove('nav-open'); }
+
+function showToast(msg, type) {
+    type = type || 'info';
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s ease'; setTimeout(() => el.remove(), 320); }, 2600);
+}
+
+function showConfirmModal(title, body, onConfirm) {
+    document.getElementById('confirm-modal-title').textContent = title;
+    document.getElementById('confirm-modal-body').textContent = body;
+    const btn = document.getElementById('confirm-modal-action');
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => { closeConfirmModal(); onConfirm(); });
+    document.getElementById('confirm-modal').classList.remove('hidden');
+}
+function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
+
+function setActiveNav(id) {
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('nav-active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('nav-active');
+}
+
+// ---------------- storage ----------------
+const HISTORY_KEY = 'msb_history';
+const PREFS_KEY = 'msb_prefs';
+
+function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch (e) { return []; } }
+function saveHistory(h) { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(-300))); } catch (e) {} }
+function loadPrefs() { try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch (e) { return {}; } }
+function savePrefs(p) { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch (e) {} }
+
+// ---------------- tool catalogue ----------------
+const EXAM_TOOLS = [
+    { id: 'series', name: 'Series', icon: 'fa-diagram-project', a: '#6366f1', b: '#8b5cf6', desc: 'Missing / wrong-number series — exam pattern' },
+    { id: 'simplification', name: 'Simplification', icon: 'fa-calculator', a: '#0ea5e9', b: '#22d3ee', desc: 'BODMAS with brackets, fractions & decimals' },
+    { id: 'quadratic', name: 'Quadratic Equation', icon: 'fa-square-root-variable', a: '#f59e0b', b: '#fb923c', desc: 'Equation I vs II — find the relation' },
+    { id: 'misc', name: 'Miscellaneous Mix', icon: 'fa-shuffle', a: '#ec4899', b: '#f472b6', desc: 'Randomised mix of everything above' }
+];
+const CUSTOM_TOOLS = [
+    { id: 'diadd', name: 'DI Addition', icon: 'fa-table-cells-large', a: '#059669', b: '#10b981', desc: 'Add a column of numbers, DI-style' },
+    { id: 'addition', name: 'Addition', icon: 'fa-plus', a: '#3b82f6', b: '#60a5fa', desc: '' },
+    { id: 'subtraction', name: 'Subtraction', icon: 'fa-minus', a: '#ef4444', b: '#f87171', desc: '' },
+    { id: 'multiplication', name: 'Multiplication', icon: 'fa-xmark', a: '#8b5cf6', b: '#a78bfa', desc: '' },
+    { id: 'division', name: 'Division', icon: 'fa-divide', a: '#0891b2', b: '#22d3ee', desc: '' },
+    { id: 'fraction', name: 'Fraction', icon: 'fa-layer-group', a: '#d946ef', b: '#f0abfc', desc: 'Add, subtract, compare, simplify & mixed numbers' },
+    { id: 'percentage', name: 'Percentage', icon: 'fa-percent', a: '#f59e0b', b: '#fbbf24', desc: '' },
+    { id: 'trigonometry', name: 'Trigonometry', icon: 'fa-wave-square', a: '#14b8a6', b: '#2dd4bf', desc: '0° to 360°' },
+    { id: 'squares', name: 'Squares', icon: 'fa-superscript', a: '#6366f1', b: '#818cf8', desc: '' },
+    { id: 'cubes', name: 'Cubes', icon: 'fa-cube', a: '#f43f5e', b: '#fb7185', desc: '' },
+    { id: 'cuberoot', name: 'Cube Root', icon: 'fa-cubes-stacked', a: '#0d9488', b: '#5eead4', desc: '' }
+];
+const ALL_TOOLS = [...EXAM_TOOLS, ...CUSTOM_TOOLS];
+function toolMeta(id) { return ALL_TOOLS.find(t => t.id === id); }
+
+const ANSWER_MODES = [
+    { id: 'mcq', label: 'Pick Options' },
+    { id: 'type', label: 'Type Answer' }
+];
+
+// ---------------- config schemas for customizable tools ----------------
+const CONFIG_SCHEMAS = {
+    simplification: [
+        { key: 'types', type: 'checkboxes', label: 'Question types', options: ['bodmas', 'signswap', 'signmapping', 'signnumswap'], labels: ['Simplify (BODMAS)', 'Interchange 2 Signs', 'Sign Substitution Puzzle', 'Interchange 2 Signs & 2 Numbers'], def: ['bodmas', 'signswap'] }
+    ],
+    diadd: [
+        { key: 'countMin', type: 'pills', label: 'How many numbers to add?', options: [3, 4, 5, 6], def: 4, pairWith: 'countMax' },
+        { key: 'digits', type: 'pills', label: 'Digits per number', options: [2, 3, 4, 5], def: 3 }
+    ],
+    addition: [
+        { key: 'digitsMax', type: 'pills', label: 'Digits per number', options: [2, 3, 4, 5], def: 3 },
+        { key: 'decimals', type: 'toggle', label: 'Include decimals', def: false }
+    ],
+    subtraction: [
+        { key: 'digitsMax', type: 'pills', label: 'Digits per number', options: [2, 3, 4, 5], def: 3 },
+        { key: 'allowNegative', type: 'toggle', label: 'Allow negative results', def: false }
+    ],
+    multiplication: [
+        { key: 'preset', type: 'pills', label: 'Digits × Digits', options: ['1×1', '2×1', '2×2', '3×1', '3×2', '3×3'], def: '2×2' }
+    ],
+    division: [
+        { key: 'divisorDigits', type: 'pills', label: 'Divisor digits', options: [1, 2, 3], def: 2 },
+        { key: 'dividendDigits', type: 'pills', label: 'Dividend digits', options: [2, 3, 4, 5], def: 4 },
+        { key: 'exactOnly', type: 'toggle', label: 'Exact division only (no remainder)', def: true }
+    ],
+    fraction: [
+        { key: 'ops', type: 'checkboxes', label: 'Operations', options: ['add', 'subtract', 'multiply', 'divide', 'compare', 'simplify'], labels: ['Add', 'Subtract', 'Multiply', 'Divide', 'Compare', 'Simplify'], def: ['add', 'subtract'] },
+        { key: 'mixed', type: 'toggle', label: 'Use mixed numbers', def: true },
+        { key: 'denMax', type: 'pills', label: 'Max denominator', options: [10, 15, 20], def: 12 }
+    ],
+    percentage: [
+        { key: 'types', type: 'checkboxes', label: 'Question types', options: ['percentOf', 'percentChange', 'expressAsPercent', 'findOriginal'], labels: ['% of a number', '% increase/decrease', 'Express as %', 'Find original (reverse %)'], def: ['percentOf', 'percentChange'] },
+        { key: 'numMax', type: 'pills', label: 'Number range up to', options: [200, 500, 1000], def: 500 }
+    ],
+    trigonometry: [
+        { key: 'angles', type: 'checkboxes', label: 'Angle range', options: ['q1', 'q2', 'q3', 'q4'], labels: ['0°–90°', '90°–180°', '180°–270°', '270°–360°'], def: ['q1', 'q2', 'q3', 'q4'] },
+        { key: 'funcs', type: 'checkboxes', label: 'Functions', options: ['sin', 'cos', 'tan', 'cosec', 'sec', 'cot'], labels: ['sin', 'cos', 'tan', 'cosec', 'sec', 'cot'], def: ['sin', 'cos', 'tan'] }
+    ],
+    squares: [{ key: 'max', type: 'pills', label: 'Number range', options: [30, 50, 100], def: 50, prefix: 'Up to ' }],
+    cubes: [{ key: 'max', type: 'pills', label: 'Number range', options: [20, 30, 50], def: 30, prefix: 'Up to ' }],
+    cuberoot: [{ key: 'max', type: 'pills', label: 'Number range', options: [20, 30, 50], def: 30, prefix: 'Up to ' }]
+};
+const QUADRANT_RANGES = { q1: [1, 89], q2: [91, 179], q3: [181, 269], q4: [271, 359] };
+function anglesFromQuadrants(qs) {
+    const set = new Set([0, 90, 180, 270, 360].filter(a => {
+        // include boundary angles only if an adjacent quadrant is selected
+        if (a === 0 || a === 360) return qs.includes('q1') || qs.includes('q4');
+        if (a === 90) return qs.includes('q1') || qs.includes('q2');
+        if (a === 180) return qs.includes('q2') || qs.includes('q3');
+        if (a === 270) return qs.includes('q3') || qs.includes('q4');
+        return false;
+    }));
+    TRIG_ANGLES.forEach(a => {
+        for (const q of qs) { const [lo, hi] = QUADRANT_RANGES[q]; if (a >= lo && a <= hi) set.add(a); }
+    });
+    return Array.from(set);
+}
+
+// ---------------- app state ----------------
+let currentView = 'dashboard';
+let quiz = null; // active quiz state
+
+// ---------------- routing / nav ----------------
+function goDashboard() { currentView = 'dashboard'; setActiveNav('nav-dashboard-btn'); renderDashboard(); closeMobileNav(); }
+function showAboutView() { currentView = 'about'; setActiveNav('nav-about-btn'); renderAbout(); closeMobileNav(); }
+function showBackupView() { currentView = 'backup'; setActiveNav('nav-backup-btn'); renderBackup(); closeMobileNav(); }
+
+function mainEl() { return document.getElementById('main-content'); }
+
+// ===================================================================
+// DASHBOARD
+// ===================================================================
+function computeStats() {
+    const h = loadHistory();
+    const totalQ = h.reduce((s, x) => s + x.total, 0);
+    const totalCorrect = h.reduce((s, x) => s + x.correct, 0);
+    const accuracy = totalQ ? Math.round((totalCorrect / totalQ) * 100) : 0;
+    const sessions = h.length;
+    const perTool = {};
+    h.forEach(s => {
+        perTool[s.toolId] = perTool[s.toolId] || { attempts: 0, correct: 0 };
+        perTool[s.toolId].attempts += s.total;
+        perTool[s.toolId].correct += s.correct;
+    });
+    let best = null;
+    Object.keys(perTool).forEach(id => {
+        const p = perTool[id];
+        if (p.attempts >= 5) {
+            const acc = p.correct / p.attempts;
+            if (!best || acc > best.acc) best = { id, acc };
+        }
+    });
+    return { totalQ, totalCorrect, accuracy, sessions, perTool, best, recent: h.slice(-5).reverse() };
+}
+
+function toolCardHtml(t, kind) {
+    return `
+    <button onclick="openConfigModal('${t.id}')" class="tool-card glass-panel rounded-2xl p-4 text-left transition-all duration-200 w-full">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white text-lg mb-3 shadow-glow" style="background:linear-gradient(120deg,${t.a},${t.b})">
+            <i class="fa-solid ${t.icon}"></i>
+        </div>
+        <h3 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100">${t.name}</h3>
+        ${t.desc ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">${t.desc}</p>` : `<p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Customisable · up to 15 Qs</p>`}
+        ${kind === 'exam' ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Easy / Medium / Hard · up to 10 Qs</p>` : ''}
+    </button>`;
+}
+
+function renderDashboard() {
+    const s = computeStats();
+    mainEl().innerHTML = `
+        <section class="glass-panel p-5 rounded-2xl anim-in">
+            <div class="flex items-center gap-3 mb-1">
+                <div class="w-11 h-11 rounded-xl gradient-flow-bg flex items-center justify-center text-white shrink-0 shadow-glow"><i class="fa-solid fa-bolt text-lg"></i></div>
+                <div>
+                    <h1 class="text-lg font-bold font-display text-slate-800 dark:text-slate-100">Maths Speed Booster</h1>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Quick-fire drills to shave seconds off every question</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 anim-in">
+            ${statTile('Questions Practised', s.totalQ, 'fa-list-check', '#7c3aed')}
+            ${statTile('Overall Accuracy', s.totalQ ? s.accuracy + '%' : '—', 'fa-bullseye', '#10b981')}
+            ${statTile('Sessions', s.sessions, 'fa-flag-checkered', '#0ea5e9')}
+            ${statTile('Best Tool', s.best ? toolMeta(s.best.id).name : '—', 'fa-trophy', '#f59e0b')}
+        </section>
+
+        <section>
+            <h2 class="text-sm font-bold font-display text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-brand-500"></i> Exam-Style Tools</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${EXAM_TOOLS.map(t => toolCardHtml(t, 'exam')).join('')}</div>
+        </section>
+
+        <section>
+            <h2 class="text-sm font-bold font-display text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><i class="fa-solid fa-sliders text-brand-500"></i> Customisable Tools</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${CUSTOM_TOOLS.map(t => toolCardHtml(t, 'custom')).join('')}</div>
+        </section>
+
+        ${s.recent.length ? `
+        <section class="glass-panel p-4 rounded-2xl">
+            <h2 class="text-sm font-bold font-display text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-brand-500"></i> Recent Sessions</h2>
+            <div class="space-y-2">
+                ${s.recent.map(r => `
+                <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 text-xs">
+                    <span class="font-semibold text-slate-700 dark:text-slate-200">${toolMeta(r.toolId) ? toolMeta(r.toolId).name : r.toolId}</span>
+                    <span class="text-slate-400">${r.correct}/${r.total} correct</span>
+                    <span class="font-bold ${r.correct / r.total >= 0.7 ? 'text-emerald-600' : 'text-amber-600'}">${Math.round((r.correct / r.total) * 100)}%</span>
+                </div>`).join('')}
+            </div>
+        </section>` : ''}
+    `;
+}
+
+function statTile(label, value, icon, color) {
+    return `
+    <div class="glass-panel rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" style="background:${color}"><i class="fa-solid ${icon} text-xs"></i></div>
+        <div class="min-w-0">
+            <p class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">${label}</p>
+            <p class="text-base font-bold font-display text-slate-800 dark:text-slate-100 truncate">${value}</p>
+        </div>
+    </div>`;
+}
+
+// ===================================================================
+// CONFIG MODAL (per-tool setup)
+// ===================================================================
+function pillGroup(field, current) {
+    const isMulti = field.type === 'checkboxes';
+    const values = isMulti ? (current || field.def) : null;
+    const selectedSingle = current !== undefined ? current : field.def;
+    const opts = field.options.map((opt, i) => {
+        const label = field.labels ? field.labels[i] : (field.prefix ? field.prefix + opt : opt);
+        const selected = isMulti ? values.includes(opt) : (String(selectedSingle) === String(opt));
+        // Plain button — no nested <input>. A checkbox/radio nested inside a
+        // label triggers TWO click events per tap (one for the label, one
+        // implicit one for the wrapped control), which double-toggles the
+        // state and makes the pill look unresponsive. State is tracked
+        // entirely via the opt-selected class, so no real form control is needed.
+        return `<button type="button" class="opt-pill ${selected ? 'opt-selected' : ''}" data-field="${field.key}" data-value="${opt}" data-multi="${isMulti}" onclick="onPillClick(this)" aria-pressed="${selected}">${label}</button>`;
+    }).join('');
+    return `<div class="mb-4"><p class="text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-2">${field.label}</p><div class="flex flex-wrap gap-2">${opts}</div></div>`;
+}
+
+function toggleField(field, current) {
+    const checked = current !== undefined ? current : field.def;
+    return `<div class="mb-4 flex items-center justify-between">
+        <p class="text-[11px] font-bold text-slate-600 dark:text-slate-300">${field.label}</p>
+        <button type="button" onclick="onToggleClick(this,'${field.key}')" data-field="${field.key}" class="relative w-11 h-6 rounded-full ${checked ? 'bg-brand-600' : 'bg-slate-300 dark:bg-white/10'} transition-colors">
+            <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${checked ? 'translate-x-5' : ''}"></span>
+        </button>
+    </div>`;
+}
+
+function onPillClick(el) {
+    const multi = el.dataset.multi === 'true';
+    const group = el.closest('.mb-4').querySelectorAll('.opt-pill');
+    if (multi) {
+        el.classList.toggle('opt-selected');
+        el.setAttribute('aria-pressed', el.classList.contains('opt-selected'));
+        // guard: at least one must remain selected
+        const anySelected = Array.from(group).some(p => p.classList.contains('opt-selected'));
+        if (!anySelected) { el.classList.add('opt-selected'); el.setAttribute('aria-pressed', 'true'); }
+    } else {
+        group.forEach(p => { p.classList.remove('opt-selected'); p.setAttribute('aria-pressed', 'false'); });
+        el.classList.add('opt-selected');
+        el.setAttribute('aria-pressed', 'true');
+    }
+}
+function onToggleClick(btn, field) {
+    const isOn = btn.classList.contains('bg-brand-600');
+    btn.classList.toggle('bg-brand-600', !isOn);
+    btn.classList.toggle('bg-slate-300', isOn);
+    btn.classList.toggle('dark:bg-white/10', isOn);
+    btn.querySelector('span').classList.toggle('translate-x-5', !isOn);
+}
+
+function readConfigForm(schema) {
+    const cfg = {};
+    schema.forEach(field => {
+        const container = document.querySelectorAll(`[data-field="${field.key}"]`);
+        if (field.type === 'checkboxes') {
+            const selected = [];
+            container.forEach(el => { if (el.classList && el.classList.contains('opt-selected')) selected.push(coerce(el.dataset.value)); });
+            cfg[field.key] = selected.length ? selected : field.def;
+        } else if (field.type === 'toggle') {
+            const btn = document.querySelector(`button[data-field="${field.key}"]`);
+            cfg[field.key] = btn ? btn.classList.contains('bg-brand-600') : field.def;
+        } else {
+            let val = field.def;
+            container.forEach(el => { if (el.classList && el.classList.contains('opt-selected')) val = coerce(el.dataset.value); });
+            cfg[field.key] = val;
+        }
+    });
+    return cfg;
+}
+function coerce(v) { const n = Number(v); return (v !== '' && !isNaN(n) && String(n) === String(v)) ? n : v; }
+
+let activeConfigTool = null;
+
+function openConfigModal(toolId) {
+    activeConfigTool = toolId;
+    const meta = toolMeta(toolId);
+    const isExam = !!EXAM_TOOLS.find(t => t.id === toolId);
+    const prefs = loadPrefs()[toolId] || {};
+    const maxQ = isExam ? 10 : 15;
+    const defQCount = prefs.qCount || maxQ;
+    const schema = CONFIG_SCHEMAS[toolId] || [];
+
+    let bodyHtml = '';
+    if (isExam) {
+        bodyHtml += pillGroup({ key: 'difficulty', label: 'Difficulty', options: ['easy', 'medium', 'hard'], labels: ['Easy', 'Medium', 'Hard'], def: 'medium' }, prefs.difficulty);
+    }
+    schema.forEach(field => {
+        bodyHtml += field.type === 'toggle' ? toggleField(field, prefs[field.key]) : pillGroup(field, prefs[field.key]);
+    });
+    bodyHtml += pillGroup({ key: 'answerMode', label: 'Answer input', options: ['mcq', 'type'], labels: ['Pick Options', 'Type Answer'], def: 'mcq' }, prefs.answerMode);
+
+    document.getElementById('config-modal-inner').innerHTML = `
+        <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" style="background:linear-gradient(120deg,${meta.a},${meta.b})"><i class="fa-solid ${meta.icon} text-sm"></i></div>
+                <h3 class="text-base font-bold font-display">${meta.name}</h3>
+            </div>
+            <button onclick="closeConfigModal()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-4">${isExam ? 'Exam-standard difficulty scaling · max 10 questions' : 'Fully customisable · max 15 questions'}</p>
+        <div>${bodyHtml}</div>
+        <div class="mb-4">
+            <p class="text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-2">Number of Questions <span id="qcount-display" class="text-brand-600 dark:text-brand-400">${defQCount}</span></p>
+            <input type="range" min="3" max="${maxQ}" value="${defQCount}" id="qcount-slider" class="w-full accent-brand-600" oninput="document.getElementById('qcount-display').textContent=this.value">
+        </div>
+        <button onclick="startQuizFromConfig()" class="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-fuchsia-600 text-white text-sm font-bold shadow-glow flex items-center justify-center gap-2">
+            <i class="fa-solid fa-play"></i> Start Practice
+        </button>
+    `;
+    document.getElementById('config-modal').classList.remove('hidden');
+}
+function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
+
+function startQuizFromConfig() {
+    const toolId = activeConfigTool;
+    const isExam = !!EXAM_TOOLS.find(t => t.id === toolId);
+    const schema = CONFIG_SCHEMAS[toolId] || [];
+    const cfg = readConfigForm(schema);
+    const difficulty = isExam ? readConfigForm([{ key: 'difficulty', type: 'pills', options: ['easy', 'medium', 'hard'], def: 'medium' }]).difficulty : null;
+    const answerMode = readConfigForm([{ key: 'answerMode', type: 'pills', options: ['mcq', 'type'], def: 'mcq' }]).answerMode;
+    const qCount = parseInt(document.getElementById('qcount-slider').value, 10);
+
+    const prefs = loadPrefs();
+    prefs[toolId] = Object.assign({}, cfg, { difficulty, answerMode, qCount });
+    savePrefs(prefs);
+
+    closeConfigModal();
+    beginQuiz(toolId, { difficulty, cfg, answerMode, qCount, isExam });
+}
+
+// ===================================================================
+// QUIZ ENGINE
+// ===================================================================
+function normalizeCustomConfig(toolId, cfg) {
+    // translate the generic pill-form values into the shape each generator expects
+    switch (toolId) {
+        case 'simplification': return { types: cfg && cfg.types && cfg.types.length ? cfg.types : ['bodmas', 'signswap'] };
+        case 'diadd': return { countMin: cfg.countMin || 4, countMax: (cfg.countMin || 4) + 1, digits: cfg.digits || 3 };
+        case 'addition': return { digitsMin: 2, digitsMax: cfg.digitsMax || 3, decimals: !!cfg.decimals };
+        case 'subtraction': return { digitsMin: 2, digitsMax: cfg.digitsMax || 3, allowNegative: !!cfg.allowNegative };
+        case 'multiplication': {
+            const [d1, d2] = String(cfg.preset || '2×2').split('×').map(Number);
+            return { digits1: d1 || 2, digits2: d2 || 2 };
+        }
+        case 'division': return { divisorDigits: cfg.divisorDigits || 2, dividendDigits: cfg.dividendDigits || 4, exactOnly: cfg.exactOnly !== false };
+        case 'fraction': return { ops: cfg.ops && cfg.ops.length ? cfg.ops : ['add', 'subtract'], mixed: !!cfg.mixed, denMax: cfg.denMax || 12 };
+        case 'percentage': return { types: cfg.types && cfg.types.length ? cfg.types : ['percentOf'], numMax: cfg.numMax || 500 };
+        case 'trigonometry': return { angles: anglesFromQuadrants(cfg.angles && cfg.angles.length ? cfg.angles : ['q1', 'q2', 'q3', 'q4']), funcs: cfg.funcs && cfg.funcs.length ? cfg.funcs : ['sin', 'cos', 'tan'] };
+        case 'squares': return { min: 2, max: cfg.max || 50 };
+        case 'cubes': return { min: 2, max: cfg.max || 30 };
+        case 'cuberoot': return { min: 2, max: cfg.max || 30 };
+        default: return cfg;
+    }
+}
+
+function generateOneQuestion(toolId, difficulty, normCfg) {
+    switch (toolId) {
+        case 'series': return generateSeriesQuestion(difficulty);
+        case 'simplification': {
+            const types = (normCfg && normCfg.types && normCfg.types.length) ? normCfg.types : ['bodmas'];
+            const type = choice(types);
+            if (type === 'signswap') return generateSignSwapQuestion(difficulty);
+            if (type === 'signmapping') return generateSignMappingQuestion(difficulty);
+            if (type === 'signnumswap') return generateSignNumberSwapQuestion(difficulty);
+            return generateSimplificationQuestion(difficulty);
+        }
+        case 'quadratic': return generateQuadraticQuestion(difficulty);
+        case 'misc': return generateMiscQuestion(difficulty);
+        case 'diadd': return generateDIAdditionQuestion(normCfg);
+        case 'addition': return generateAdditionQuestion(normCfg);
+        case 'subtraction': return generateSubtractionQuestion(normCfg);
+        case 'multiplication': return generateMultiplicationQuestion(normCfg);
+        case 'division': return generateDivisionQuestion(normCfg);
+        case 'fraction': return generateFractionQuestion(normCfg);
+        case 'percentage': return generatePercentageQuestion(normCfg);
+        case 'trigonometry': return generateTrigQuestion(normCfg);
+        case 'squares': return generateSquareQuestion(normCfg);
+        case 'cubes': return generateCubeQuestion(normCfg);
+        case 'cuberoot': return generateCuberootQuestion(normCfg);
+        default: return generateMiscQuestion('medium');
+    }
+}
+
+function beginQuiz(toolId, opts) {
+    const normCfg = normalizeCustomConfig(toolId, opts.cfg || {});
+    const dedupe = makeDedupeGuard(60);
+    const questions = [];
+    for (let i = 0; i < opts.qCount; i++) {
+        questions.push(generateUnique(() => generateOneQuestion(toolId, opts.difficulty, normCfg), dedupe, 25));
+    }
+
+    quiz = {
+        toolId, opts, questions,
+        idx: 0, answers: [],
+        stopwatchHandle: null,
+        answered: false, startedAt: Date.now()
+    };
+    currentView = 'quiz';
+    setActiveNav('nav-dashboard-btn');
+    renderQuizQuestion();
+}
+
+function stopTimer() { if (quiz && quiz.stopwatchHandle) { clearInterval(quiz.stopwatchHandle); quiz.stopwatchHandle = null; } }
+
+function renderQuizQuestion() {
+    stopTimer();
+    const q = quiz.questions[quiz.idx];
+    quiz.answered = false;
+    quiz.qStartedAt = Date.now();
+    const meta = toolMeta(quiz.toolId);
+    const isTypeMode = quiz.opts.answerMode === 'type' && q.numeric;
+
+    const optionsHtml = isTypeMode ? `
+        <div class="mt-3">
+            <input type="number" step="any" inputmode="decimal" id="type-answer-input" placeholder="Type your answer..." autocomplete="off"
+                class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-lg font-bold font-mono-tech text-center focus:outline-none focus:border-brand-500">
+            <button onclick="submitTypedAnswer()" class="mt-3 w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-fuchsia-600 text-white text-sm font-bold shadow-glow">Submit</button>
+        </div>
+    ` : `
+        <div class="space-y-2.5 mt-3">
+            ${q.options.map((opt, i) => `
+                <button class="quiz-option" onclick="submitAnswer(${i})" id="qopt-${i}">
+                    <span class="opt-letter">${String.fromCharCode(65 + i)}</span><span class="flex-1 whitespace-pre-line">${opt}</span>
+                </button>`).join('')}
+        </div>
+    `;
+
+    mainEl().innerHTML = `
+        <section class="glass-panel p-5 rounded-2xl anim-in max-w-2xl mx-auto w-full">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs shrink-0" style="background:linear-gradient(120deg,${meta.a},${meta.b})"><i class="fa-solid ${meta.icon}"></i></div>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">${meta.name}</span>
+                </div>
+                <button onclick="exitQuizConfirm()" class="text-[11px] font-semibold text-slate-400 hover:text-rose-500"><i class="fa-solid fa-xmark"></i> Exit</button>
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-4">
+                <span>Question ${quiz.idx + 1} / ${quiz.questions.length}</span>
+                <span class="flex items-center gap-1.5 font-mono-tech"><i class="fa-regular fa-clock"></i> <span id="stopwatch">0.0s</span></span>
+            </div>
+
+            <p class="text-base font-bold font-display text-slate-800 dark:text-slate-100 whitespace-pre-line leading-relaxed">${q.q}</p>
+            ${optionsHtml}
+        </section>
+    `;
+
+    if (isTypeMode) {
+        const input = document.getElementById('type-answer-input');
+        input.focus();
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') submitTypedAnswer(); });
+    }
+
+    // A plain running stopwatch — shows how long you're taking without any
+    // countdown pressure or auto-submit. Time taken is still recorded for
+    // the results screen either way.
+    quiz.stopwatchHandle = setInterval(() => {
+        const el = document.getElementById('stopwatch');
+        if (el) el.textContent = ((Date.now() - quiz.qStartedAt) / 1000).toFixed(1) + 's';
+    }, 100);
+}
+
+
+function recordAnswer(q, userAnswerStr, isCorrect) {
+    const timeTaken = Math.round((Date.now() - quiz.qStartedAt) / 100) / 10;
+    quiz.answers.push({ q: q.q, correctAnswer: q.answer, userAnswer: userAnswerStr, correct: isCorrect, timeTaken });
+}
+
+function submitAnswer(i) {
+    if (quiz.answered) return;
+    quiz.answered = true;
+    stopTimer();
+    const q = quiz.questions[quiz.idx];
+    const chosen = q.options[i];
+    const isCorrect = String(chosen) === String(q.answer);
+    recordAnswer(q, String(chosen), isCorrect);
+    q.options.forEach((opt, j) => {
+        const btn = document.getElementById('qopt-' + j);
+        btn.disabled = true;
+        if (String(opt) === String(q.answer)) btn.classList.add('q-correct');
+        else if (j === i) btn.classList.add('q-wrong');
+    });
+    setTimeout(advanceQuiz, 700);
+}
+
+function submitTypedAnswer() {
+    if (quiz.answered) return;
+    const input = document.getElementById('type-answer-input');
+    const val = input.value.trim();
+    if (val === '') { showToast('Type a number first', 'error'); return; }
+    quiz.answered = true;
+    stopTimer();
+    const q = quiz.questions[quiz.idx];
+    const rawCorrect = q.rawAnswer !== undefined ? q.rawAnswer : parseFloat(q.answer);
+    const userNum = parseFloat(val);
+    const isCorrect = isFinite(userNum) && Math.abs(userNum - rawCorrect) < 0.05;
+    recordAnswer(q, val, isCorrect);
+    input.disabled = true;
+    input.classList.add(isCorrect ? 'q-correct' : 'q-wrong');
+    input.style.borderColor = isCorrect ? '#10b981' : '#f43f5e';
+    if (!isCorrect) showToast(`Correct answer: ${q.answer}`, 'error'); else showToast('Correct!', 'success');
+    setTimeout(advanceQuiz, 900);
+}
+
+function advanceQuiz() {
+    quiz.idx++;
+    if (quiz.idx >= quiz.questions.length) finishQuiz();
+    else renderQuizQuestion();
+}
+
+function exitQuizConfirm() {
+    showConfirmModal('Exit practice?', 'Your progress in this session will be lost.', () => { stopTimer(); goDashboard(); });
+}
+
+function finishQuiz() {
+    stopTimer();
+    const correct = quiz.answers.filter(a => a.correct).length;
+    const total = quiz.answers.length;
+    const avgTime = total ? Math.round((quiz.answers.reduce((s, a) => s + a.timeTaken, 0) / total) * 10) / 10 : 0;
+    const session = {
+        id: uid(), toolId: quiz.toolId, difficulty: quiz.opts.difficulty || null,
+        total, correct, avgTime, date: new Date().toISOString()
+    };
+    const h = loadHistory(); h.push(session); saveHistory(h);
+
+    currentView = 'result';
+    const meta = toolMeta(quiz.toolId);
+    const pct = total ? Math.round((correct / total) * 100) : 0;
+    const grade = pct >= 85 ? { label: 'Excellent!', color: '#10b981' } : pct >= 60 ? { label: 'Good effort', color: '#f59e0b' } : { label: 'Keep practising', color: '#f43f5e' };
+
+    mainEl().innerHTML = `
+    <section class="glass-panel p-6 rounded-2xl text-center anim-in max-w-xl mx-auto w-full">
+        <div class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-white text-2xl shadow-glow mb-3" style="background:linear-gradient(120deg,${meta.a},${meta.b})"><i class="fa-solid ${meta.icon}"></i></div>
+        <h2 class="text-lg font-bold font-display text-slate-800 dark:text-slate-100">${meta.name} — Result</h2>
+        <p class="text-xs font-bold mt-1" style="color:${grade.color}">${grade.label}</p>
+        <div class="grid grid-cols-3 gap-3 mt-5">
+            <div class="rounded-xl bg-slate-50 dark:bg-white/5 p-3"><p class="text-xl font-bold font-display">${correct}/${total}</p><p class="text-[10px] text-slate-500 font-semibold">Correct</p></div>
+            <div class="rounded-xl bg-slate-50 dark:bg-white/5 p-3"><p class="text-xl font-bold font-display">${pct}%</p><p class="text-[10px] text-slate-500 font-semibold">Accuracy</p></div>
+            <div class="rounded-xl bg-slate-50 dark:bg-white/5 p-3"><p class="text-xl font-bold font-display">${avgTime}s</p><p class="text-[10px] text-slate-500 font-semibold">Avg / Q</p></div>
+        </div>
+
+        <div class="flex gap-2 mt-5">
+            <button onclick="retrySameConfig()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-fuchsia-600 text-white text-xs font-bold shadow-glow"><i class="fa-solid fa-rotate-right"></i> Practice Again</button>
+            <button onclick="openConfigModal('${quiz.toolId}')" class="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs font-bold"><i class="fa-solid fa-sliders"></i> Change Settings</button>
+        </div>
+        <button onclick="goDashboard()" class="mt-2 w-full py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-xs font-bold">Back to Dashboard</button>
+
+        <div class="mt-5 text-left">
+            <button onclick="document.getElementById('review-list').classList.toggle('hidden')" class="text-xs font-bold text-brand-600 dark:text-brand-400 flex items-center gap-1.5"><i class="fa-solid fa-list-check"></i> Review Answers</button>
+            <div id="review-list" class="hidden mt-3 space-y-2 max-h-80 overflow-y-auto">
+                ${quiz.answers.map((a, i) => `
+                <div class="rounded-xl p-3 text-[11px] ${a.correct ? 'bg-emerald-50 dark:bg-emerald-900/15' : 'bg-rose-50 dark:bg-rose-900/15'}">
+                    <p class="font-semibold text-slate-700 dark:text-slate-200 whitespace-pre-line mb-1">${i + 1}. ${a.q}</p>
+                    <p class="text-slate-500 dark:text-slate-400">Your answer: <b>${a.userAnswer ?? '(skipped)'}</b> ${a.correct ? '' : `· Correct: <b>${a.correctAnswer}</b>`} · ${a.timeTaken}s</p>
+                </div>`).join('')}
+            </div>
+        </div>
+    </section>`;
+}
+
+function retrySameConfig() {
+    const prefs = loadPrefs()[quiz.toolId] || {};
+    beginQuiz(quiz.toolId, quiz.opts);
+}
+
+// ===================================================================
+// ABOUT ME
+// ===================================================================
+function renderAbout() {
+    mainEl().innerHTML = `
+    <section class="glass-panel p-6 rounded-2xl anim-in max-w-xl mx-auto w-full text-center">
+        <div class="w-20 h-20 mx-auto rounded-full overflow-hidden shadow-glow mb-4"><img src="../icon-512.png" class="w-full h-full object-contain" alt="Akarsh K C"></div>
+        <h2 class="text-lg font-bold font-display text-slate-800 dark:text-slate-100">Akarsh K C</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Builder of Tukka Classifier — English / Maths / GK / Reasoning mistake tracker &amp; the Maths Speed Booster you're using right now.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
+            Made this out of my own prep grind — the endless mock analysis spreadsheets and the constant need to shave a few seconds off every calculation.
+            Hope it helps you the same way. All the best for your exams! ❤️
+        </p>
+    </section>`;
+}
+
+// ===================================================================
+// BACKUP & RESTORE (local JSON export/import — this app's data only)
+// ===================================================================
+function renderBackup() {
+    mainEl().innerHTML = `
+    <section class="glass-panel p-6 rounded-2xl anim-in max-w-xl mx-auto w-full">
+        <h2 class="text-base font-bold font-display mb-1 flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up text-brand-500"></i> Backup &amp; Restore</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-5">Export your Maths Speed Booster practice history as a JSON file, or restore from a previous export.</p>
+        <div class="space-y-2.5">
+            <button onclick="exportBackup()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Export Backup (.json)</button>
+            <button onclick="document.getElementById('import-json-input').click()" class="w-full py-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/25 text-brand-700 dark:text-brand-300 text-sm font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-upload"></i> Import Backup</button>
+            <button onclick="clearDataPrompt()" class="w-full py-2.5 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-trash"></i> Clear All Practice Data</button>
+        </div>
+    </section>`;
+}
+function exportBackup() {
+    const data = { app: 'maths-speed-booster', exportedAt: new Date().toISOString(), history: loadHistory(), prefs: loadPrefs() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `maths-speed-booster-backup-${Date.now()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Backup exported!', 'success');
+}
+function handleImportFile(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const data = JSON.parse(reader.result);
+            if (data.history) saveHistory(data.history);
+            if (data.prefs) savePrefs(data.prefs);
+            showToast('Backup restored!', 'success');
+            if (currentView === 'dashboard') renderDashboard();
+        } catch (e) { showToast('Invalid backup file.', 'error'); }
+    };
+    reader.readAsText(file);
+    evt.target.value = '';
+}
+function clearDataPrompt() {
+    showConfirmModal('Clear all practice data?', 'This deletes your entire Maths Speed Booster history from this device. This cannot be undone.', () => {
+        localStorage.removeItem(HISTORY_KEY);
+        showToast('Practice data cleared.', 'info');
+        renderBackup();
+    });
+}
+
+// ===================================================================
+// BOOT
+// ===================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('dark-mode-icon').className = isDarkMode() ? 'fa-solid fa-moon text-indigo-200 text-[10px]' : 'fa-solid fa-sun text-amber-500 text-[10px]';
+    if (isDarkMode()) { document.getElementById('dark-mode-knob').style.transform = 'translateX(20px)'; document.getElementById('dark-mode-toggle').classList.remove('bg-slate-200'); document.getElementById('dark-mode-toggle').classList.add('bg-brand-600'); }
+
+    goDashboard();
+
+    const loader = document.getElementById('app-loading-screen');
+    setTimeout(() => { loader.style.opacity = '0'; setTimeout(() => loader.remove(), 500); }, 350);
+
+    try { window.parent.postMessage({ type: 'tukka:darkModeChanged', dark: isDarkMode() }, '*'); } catch (e) {}
+});
+    </script>
+</body>
+</html>
