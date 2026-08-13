@@ -363,6 +363,7 @@
         const examGridEl = document.getElementById('exam-grid');
 
         let activeCategory = localStorage.getItem(LAST_CATEGORY_KEY) || null;
+        if (activeCategory && !CATEGORIES[activeCategory]) activeCategory = null; // stale/invalid value from an older version
         let pickerCategory = activeCategory || 'english'; // which tab the switcher is showing
 
         function catVars(cat) { return `--cat-a:${cat.colorA};--cat-b:${cat.colorB};`; }
