@@ -3000,6 +3000,13 @@ If a file clearly isn't from a reasoning mock-test review screen at all, just sk
                 localStorage.setItem(DRIVE_CONNECTED_KEY, '1');
                 statusEl.textContent = 'Connected! Loading your data from Drive...'; statusEl.className = 'text-[11px] font-medium text-emerald-600';
                 await pullFromCloud(false);
+                // Force an immediate (non-debounced) push right after connecting, so
+                // whatever was already logged on this device before connecting is
+                // guaranteed to land on Drive straight away — otherwise it only goes
+                // up the next time an entry is added/edited, which can look like
+                // "signed in but nothing synced" if the user checks another device
+                // right after connecting.
+                await flushPendingSync();
                 showToast('Connected to Google Drive successfully!', 'success');
                 setTimeout(closeSyncModal, 900);
             } catch (e) {
@@ -3068,42 +3075,62 @@ If a file clearly isn't from a reasoning mock-test review screen at all, just sk
             return data;
         }
 
+        // The actual network sync, factored out so it can be triggered either
+        // debounced (pushToCloud, for normal typing/edits) or immediately
+        // (flushPendingSync, for connect-time and app-backgrounding — see below).
+        async function performCloudPush() {
+            try {
+                updateSyncStatus('syncing');
+                // Merge-read-first: pull whatever's on Drive right now and keep
+                // every OTHER app's section untouched, only overwriting our own
+                // 'reasoning_analyzer' key. This protects the other two apps' data
+                // (and vice versa) from this app's push even without editing its file.
+                let existingData = {};
+                try {
+                    const existingId = await findDriveFileId(false);
+                    if (existingId) {
+                        const text = await readDriveFile(existingId, false);
+                        const parsedExisting = JSON.parse(text);
+                        if (parsedExisting && parsedExisting.data && typeof parsedExisting.data === 'object') existingData = parsedExisting.data;
+                    }
+                } catch (e) { /* fine — first sync, or offline; proceed with what we have */ }
+
+                const ownData = collectFullAppBackup();
+                const mergedData = Object.assign({}, existingData, ownData);
+                const content = JSON.stringify({ app: 'Tukka Classifier - Full Backup', version: 1, data: mergedData, updatedAt: Date.now() });
+                const fileId = await findDriveFileId(false);
+                if (fileId) { await updateDriveFile(fileId, content, false); }
+                else { await createDriveFile(content, false); }
+                updateSyncStatus('synced', 'Last synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }));
+            } catch (e) {
+                updateSyncStatus('off', 'Tap Sync Now to resume');
+                if (!driveExpiryNotified) {
+                    driveExpiryNotified = true;
+                    showToast('Sign-in expired — tap Sync Now to resume (this keeps your Drive data private).', 'info');
+                }
+            }
+        }
+
         function pushToCloud() {
             if (!isDriveConnected() || !getDriveClientId()) return;
             clearTimeout(syncDebounceTimer);
-            syncDebounceTimer = setTimeout(async () => {
-                try {
-                    updateSyncStatus('syncing');
-                    // Merge-read-first: pull whatever's on Drive right now and keep
-                    // every OTHER app's section untouched, only overwriting our own
-                    // 'reasoning_analyzer' key. This protects the other two apps' data
-                    // (and vice versa) from this app's push even without editing its file.
-                    let existingData = {};
-                    try {
-                        const existingId = await findDriveFileId(false);
-                        if (existingId) {
-                            const text = await readDriveFile(existingId, false);
-                            const parsedExisting = JSON.parse(text);
-                            if (parsedExisting && parsedExisting.data && typeof parsedExisting.data === 'object') existingData = parsedExisting.data;
-                        }
-                    } catch (e) { /* fine — first sync, or offline; proceed with what we have */ }
-
-                    const ownData = collectFullAppBackup();
-                    const mergedData = Object.assign({}, existingData, ownData);
-                    const content = JSON.stringify({ app: 'Tukka Classifier - Full Backup', version: 1, data: mergedData, updatedAt: Date.now() });
-                    const fileId = await findDriveFileId(false);
-                    if (fileId) { await updateDriveFile(fileId, content, false); }
-                    else { await createDriveFile(content, false); }
-                    updateSyncStatus('synced', 'Last synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }));
-                } catch (e) {
-                    updateSyncStatus('off', 'Tap Sync Now to resume');
-                    if (!driveExpiryNotified) {
-                        driveExpiryNotified = true;
-                        showToast('Sign-in expired — tap Sync Now to resume (this keeps your Drive data private).', 'info');
-                    }
-                }
-            }, 800);
+            syncDebounceTimer = setTimeout(performCloudPush, 800);
         }
+
+        // Cancels any pending debounced push and runs it right now instead.
+        // Used right after connecting (so existing local data lands on Drive
+        // immediately instead of waiting for the next edit) and whenever the
+        // app is about to be backgrounded/closed — important inside the Android
+        // WebView wrapper, where the JS timer for a normal 800ms-debounced
+        // pushToCloud() can get suspended/killed before it ever fires if the
+        // user switches away right after adding an entry.
+        function flushPendingSync() {
+            if (!isDriveConnected() || !getDriveClientId()) return Promise.resolve();
+            clearTimeout(syncDebounceTimer);
+            return performCloudPush();
+        }
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushPendingSync(); });
+        window.addEventListener('pagehide', () => { flushPendingSync(); });
 
         async function pullFromCloud(showMsg, interactive = false) {
             if (!isDriveConnected() || !getDriveClientId()) { updateSyncStatus('off'); return false; }
