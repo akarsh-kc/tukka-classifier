@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maths Classifier — Wrong-Question Tracker by Topic</title>
+    <title>Reasoning Analyzer — Wrong-Question Tracker by Topic</title>
 
     <!-- PWA setup -->
     <link rel="manifest" href="../manifest.json">
@@ -12,7 +12,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Maths Classifier">
+    <meta name="apple-mobile-web-app-title" content="Reasoning Analyzer">
     <link rel="icon" href="../icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="../icon-192.png">
 
@@ -655,10 +655,10 @@
     <!-- App loading screen: shown until initial data + render is complete -->
     <div id="app-loading-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-[#05070f] transition-all duration-400 ease-out">
         <div class="rounded-2xl shadow-glow overflow-hidden w-16 h-16 splash-icon-pulse">
-            <img src="../icon-192.png" alt="Maths Classifier" class="w-full h-full object-contain">
+            <img src="../icon-192.png" alt="Reasoning Analyzer" class="w-full h-full object-contain">
         </div>
         <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Made by Akarsh K C❤️</p>
-        <h1 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100 text-center">Maths Classifier</h1>
+        <h1 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100 text-center">Reasoning Analyzer</h1>
         <div class="splash-progress-track">
             <div class="splash-progress-bar"></div>
         </div>
@@ -673,7 +673,7 @@
             <div class="rounded-lg overflow-hidden shrink-0 w-7 h-7">
                 <img src="../icon-192.png" alt="Logo" class="w-full h-full object-contain">
             </div>
-            <h1 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100 truncate">Maths Classifier</h1>
+            <h1 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100 truncate">Reasoning Analyzer</h1>
         </div>
     </header>
 
@@ -688,7 +688,7 @@
             </div>
             <div class="hidden lg:block min-w-0">
                 <h1 class="text-base font-bold font-display bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
-                    Maths Classifier
+                    Reasoning Analyzer
                 </h1>
                 <p class="text-[11px] text-slate-500 font-medium flex items-center gap-2 mt-1">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot inline-block shrink-0"></span>
@@ -706,9 +706,9 @@
                 <span class="hidden lg:inline">Home</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
-            <button onclick="tukkaSwitchCategory()" id="nav-category-btn" class="nav-pill" style="--pill-a:#e11d48;--pill-b:#fb7185;--pill-glow:rgba(225,29,72,.55)" title="Switch App (English / Maths / GK)">
+            <button onclick="tukkaSwitchCategory()" id="nav-category-btn" class="nav-pill" style="--pill-a:#e11d48;--pill-b:#fb7185;--pill-glow:rgba(225,29,72,.55)" title="Switch App (English / Maths / GK / Reasoning)">
                 <span class="nav-icon-wrap"><i class="fa-solid fa-shapes"></i></span><span class="hidden lg:inline truncate">Switch App</span>
-                <i class="fa-solid fa-toggle-on hidden lg:block absolute right-[0.65rem] top-1/2 -translate-y-1/2 text-amber-500 text-xs" title="Switch between English / Maths / GK"></i>
+                <i class="fa-solid fa-toggle-on hidden lg:block absolute right-[0.65rem] top-1/2 -translate-y-1/2 text-amber-500 text-xs" title="Switch between English / Maths / GK / Reasoning"></i>
             </button>
 
             <div class="nav-divider"></div>
@@ -717,29 +717,79 @@
                 <span class="nav-icon-wrap !bg-white/20 !text-white"><i class="fa-solid fa-plus"></i></span>
                 <span class="hidden lg:inline">Add Mistakes</span>
             </button>
-            <button onclick="openGroupView('Number System')" id="nav-numsys-btn" class="nav-pill" style="--pill-a:#0891b2;--pill-b:#22d3ee;--pill-glow:rgba(8,145,178,.55)" title="Number System">
-                <span class="nav-icon-wrap"><i class="fa-solid fa-hashtag"></i></span>
-                <span class="hidden lg:inline truncate">Number System</span>
+            <button onclick="openGroupView('Analogy')" id="nav-analogy-btn" class="nav-pill" style="--pill-a:#4f46e5;--pill-b:#818cf8;--pill-glow:rgba(79,70,229,.55)" title="Analogy">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-equals"></i></span>
+                <span class="hidden lg:inline truncate">Analogy</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
-            <button onclick="openGroupView('Arithmetic & Numbers')" id="nav-arith-btn" class="nav-pill" style="--pill-a:#059669;--pill-b:#34d399;--pill-glow:rgba(5,150,105,.55)" title="Arithmetic & Numbers">
-                <span class="nav-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></span>
-                <span class="hidden lg:inline truncate">Arithmetic &amp; Numbers</span>
+            <button onclick="openGroupView('Classification')" id="nav-classification-btn" class="nav-pill" style="--pill-a:#0891b2;--pill-b:#22d3ee;--pill-glow:rgba(8,145,178,.55)" title="Classification">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-layer-group"></i></span>
+                <span class="hidden lg:inline truncate">Classification</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
-            <button onclick="openGroupView('Time, Speed & Work')" id="nav-tsw-btn" class="nav-pill" style="--pill-a:#d97706;--pill-b:#fbbf24;--pill-glow:rgba(217,119,6,.55)" title="Time, Speed & Work">
-                <span class="nav-icon-wrap"><i class="fa-solid fa-gauge-high"></i></span>
-                <span class="hidden lg:inline truncate">Time, Speed &amp; Work</span>
+            <button onclick="openGroupView('Series')" id="nav-series-btn" class="nav-pill" style="--pill-a:#7c3aed;--pill-b:#a855f7;--pill-glow:rgba(124,58,237,.55)" title="Series">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-list-ol"></i></span>
+                <span class="hidden lg:inline truncate">Series</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
-            <button onclick="openGroupView('Geometry & Trigonometry')" id="nav-geo-btn" class="nav-pill" style="--pill-a:#7c3aed;--pill-b:#a855f7;--pill-glow:rgba(124,58,237,.55)" title="Geometry & Trigonometry">
+            <button onclick="openGroupView('Coding-Decoding')" id="nav-coding-btn" class="nav-pill" style="--pill-a:#b45309;--pill-b:#f59e0b;--pill-glow:rgba(180,83,9,.55)" title="Coding-Decoding">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-key"></i></span>
+                <span class="hidden lg:inline truncate">Coding-Decoding</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Blood Relations')" id="nav-bloodrelations-btn" class="nav-pill" style="--pill-a:#db2777;--pill-b:#f472b6;--pill-glow:rgba(219,39,119,.55)" title="Blood Relations">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-people-roof"></i></span>
+                <span class="hidden lg:inline truncate">Blood Relations</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Direction & Distance')" id="nav-direction-btn" class="nav-pill" style="--pill-a:#059669;--pill-b:#34d399;--pill-glow:rgba(5,150,105,.55)" title="Direction & Distance">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-compass"></i></span>
+                <span class="hidden lg:inline truncate">Direction & Distance</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Order & Ranking')" id="nav-orderranking-btn" class="nav-pill" style="--pill-a:#ca8a04;--pill-b:#facc15;--pill-glow:rgba(202,138,4,.55)" title="Order & Ranking">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-ranking-star"></i></span>
+                <span class="hidden lg:inline truncate">Order & Ranking</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Math Operations')" id="nav-mathops-btn" class="nav-pill" style="--pill-a:#2563eb;--pill-b:#60a5fa;--pill-glow:rgba(37,99,235,.55)" title="Math Operations">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-calculator"></i></span>
+                <span class="hidden lg:inline truncate">Math Operations</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Clock & Calendar')" id="nav-clockcalendar-btn" class="nav-pill" style="--pill-a:#0d9488;--pill-b:#2dd4bf;--pill-glow:rgba(13,148,136,.55)" title="Clock & Calendar">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-clock"></i></span>
+                <span class="hidden lg:inline truncate">Clock & Calendar</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Cubes & Dice')" id="nav-cubesdice-btn" class="nav-pill" style="--pill-a:#9333ea;--pill-b:#c084fc;--pill-glow:rgba(147,51,234,.55)" title="Cubes & Dice">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-dice"></i></span>
+                <span class="hidden lg:inline truncate">Cubes & Dice</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Non-Verbal Figures')" id="nav-nonverbal-btn" class="nav-pill" style="--pill-a:#dc2626;--pill-b:#f87171;--pill-glow:rgba(220,38,38,.55)" title="Non-Verbal Figures">
                 <span class="nav-icon-wrap"><i class="fa-solid fa-shapes"></i></span>
-                <span class="hidden lg:inline truncate">Geometry &amp; Trigonometry</span>
+                <span class="hidden lg:inline truncate">Non-Verbal Figures</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
-            <button onclick="openGroupView('Algebra & Data')" id="nav-algebra-btn" class="nav-pill" style="--pill-a:#e11d48;--pill-b:#fb7185;--pill-glow:rgba(225,29,72,.5)" title="Algebra & Data">
-                <span class="nav-icon-wrap"><i class="fa-solid fa-chart-column"></i></span>
-                <span class="hidden lg:inline truncate">Algebra &amp; Data</span>
+            <button onclick="openGroupView('Syllogism')" id="nav-syllogism-btn" class="nav-pill" style="--pill-a:#475569;--pill-b:#94a3b8;--pill-glow:rgba(71,85,105,.55)" title="Syllogism">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-diagram-project"></i></span>
+                <span class="hidden lg:inline truncate">Syllogism</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Venn Diagrams')" id="nav-venn-btn" class="nav-pill" style="--pill-a:#16a34a;--pill-b:#4ade80;--pill-glow:rgba(22,163,74,.55)" title="Venn Diagrams">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-circle-nodes"></i></span>
+                <span class="hidden lg:inline truncate">Venn Diagrams</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Statement & Logic')" id="nav-statementlogic-btn" class="nav-pill" style="--pill-a:#c2410c;--pill-b:#fb923c;--pill-glow:rgba(194,65,12,.55)" title="Statement & Logic">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-comment-dots"></i></span>
+                <span class="hidden lg:inline truncate">Statement & Logic</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+            <button onclick="openGroupView('Seating & Puzzles')" id="nav-seating-btn" class="nav-pill" style="--pill-a:#65a30d;--pill-b:#a3e635;--pill-glow:rgba(101,163,13,.55)" title="Seating & Puzzles">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-chair"></i></span>
+                <span class="hidden lg:inline truncate">Seating & Puzzles</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
             <button onclick="showHistoryView()" id="nav-history-btn" class="nav-pill" style="--pill-a:#0891b2;--pill-b:#22d3ee;--pill-glow:rgba(8,145,178,.55)" title="History — everything you've added, by date">
@@ -795,11 +845,11 @@
             <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-violet-400/20 to-cyan-400/20 blur-2xl"></div>
             <div class="relative flex flex-col sm:flex-row sm:items-center gap-5">
                 <div class="w-14 h-14 rounded-2xl gradient-flow-bg flex items-center justify-center text-white shadow-glow shrink-0">
-                    <i class="fa-solid fa-square-root-variable text-2xl"></i>
+                    <i class="fa-solid fa-earth-asia text-2xl"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-lg font-bold font-display text-slate-900">Maths Classifier</h1>
-                    <p class="text-xs text-slate-500 font-medium mt-1 leading-relaxed">Upload screenshots or a screen recording of the questions you got wrong in your mock — Gemini reads them, sorts each one into the right topic folder below (formulas, equations &amp; tables render properly), and keeps a searchable record so you can revise by topic.</p>
+                    <h1 class="text-lg font-bold font-display text-slate-900">Reasoning Analyzer</h1>
+                    <p class="text-xs text-slate-500 font-medium mt-1 leading-relaxed">Upload screenshots or a screen recording of the reasoning questions you got wrong in your mock — Gemini reads them, sorts each one into the right topic folder below (Analogy, Classification, Series, Coding-Decoding, Blood Relations, Direction &amp; Distance, Order &amp; Ranking, Math Operations, Clock &amp; Calendar, Cubes &amp; Dice, Non-Verbal Figures, Syllogism, Venn Diagrams, Statement &amp; Logic, Seating &amp; Puzzles), and keeps a searchable record so you can revise by topic.</p>
                 </div>
                 <button onclick="openAddMistakeModal()" class="shrink-0 w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                     <i class="fa-solid fa-camera-retro"></i> Add Screenshots / Videos
@@ -1120,7 +1170,7 @@
             <div class="p-5 space-y-4 text-xs">
                 <div class="p-3 bg-violet-50 border border-violet-200 rounded-xl text-violet-800 leading-relaxed">
                     <p class="font-semibold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> What to upload</p>
-                    <p>Upload screenshots or a short screen recording of the questions you got wrong in your mock (Number System, Algebra, Mensuration, DI, etc.). 2–3 screenshots at a time work best; Gemini sorts each question into the right topic folder automatically, formulas and all.</p>
+                    <p>Upload screenshots or a short screen recording of the reasoning questions you got wrong in your mock (Analogy, Series, Coding-Decoding, Blood Relations, Puzzles, etc.). 2–3 screenshots at a time work best; Gemini sorts each question into the right topic folder automatically.</p>
                 </div>
                 <div>
                     <label class="block text-slate-700 font-medium mb-1.5">Mistake screenshots or video</label>
@@ -1249,7 +1299,7 @@
                     <p class="text-xs font-bold text-slate-900">Feedback</p>
                     <p class="text-[11px] text-slate-500">Found a bug or have an idea? I'd genuinely love to hear it.</p>
                 </div>
-                <a href="mailto:randomwork.a@gmail.com?subject=Tukka%20Meter%20Maths%20Tracker%20Feedback" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm"><i class="fa-solid fa-envelope"></i> Send Feedback</a>
+                <a href="mailto:randomwork.a@gmail.com?subject=Tukka%20Meter%20Reasoning%20Tracker%20Feedback" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm"><i class="fa-solid fa-envelope"></i> Send Feedback</a>
             </div>
         </div>
     </section>
@@ -1387,34 +1437,77 @@
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
     <script>
 
-        // ================= MATH ANALYZER — FOLDER STRUCTURE =================
-        // All folders are type 'qa' (question/options/answer/explanation) — maths
-        // has no vocab-style entries. Grouped into 5 topic clusters covering all
-        // 30 requested topics, purely for a manageable home-screen layout.
-        const MATH_FOLDERS = {
-            'Number System': {
-                icon: 'fa-hashtag', colorA: '#0891b2', colorB: '#22d3ee', type: 'qa',
-                subfolders: ['Number System', 'HCF and LCM', 'Simplification']
+        // ================= REASONING ANALYZER — FOLDER STRUCTURE =================
+        // All folders are type 'qa' (question/options/answer/explanation) —
+        // Reasoning has no vocab-style entries. Each topic is its own flat
+        // top-level folder — no subfolder drill-down (each folder's "subfolders"
+        // list is just itself, kept only so the shared rendering/classify logic
+        // below — written for the grouped Maths layout — still works unmodified).
+        const REASONING_FOLDERS = {
+            'Analogy': {
+                icon: 'fa-equals', colorA: '#4f46e5', colorB: '#818cf8', type: 'qa',
+                subfolders: ['Analogy']
             },
-            'Arithmetic & Numbers': {
-                icon: 'fa-sack-dollar', colorA: '#059669', colorB: '#34d399', type: 'qa',
-                subfolders: ['Percentage', 'Average', 'Ratio and Proportion', 'Partnership', 'Mixture and Allegation', 'Profit and Loss', 'Discount', 'Simple Interest', 'Compound Interest', 'Installments (EMI)']
+            'Classification': {
+                icon: 'fa-layer-group', colorA: '#0891b2', colorB: '#22d3ee', type: 'qa',
+                subfolders: ['Classification']
             },
-            'Time, Speed & Work': {
-                icon: 'fa-gauge-high', colorA: '#d97706', colorB: '#fbbf24', type: 'qa',
-                subfolders: ['Time, Speed and Distance', 'Linear Race', 'Circular Race', 'Boats and Streams', 'Work and Time', 'Pipes and Cisterns']
+            'Series': {
+                icon: 'fa-list-ol', colorA: '#7c3aed', colorB: '#a855f7', type: 'qa',
+                subfolders: ['Series']
             },
-            'Geometry & Trigonometry': {
-                icon: 'fa-shapes', colorA: '#7c3aed', colorB: '#a855f7', type: 'qa',
-                subfolders: ['Trigonometry', 'Heights and Distances', 'Mensuration', 'Geometry', 'Coordinate Geometry']
+            'Coding-Decoding': {
+                icon: 'fa-key', colorA: '#b45309', colorB: '#f59e0b', type: 'qa',
+                subfolders: ['Coding-Decoding']
             },
-            'Algebra & Data': {
-                icon: 'fa-chart-column', colorA: '#e11d48', colorB: '#fb7185', type: 'qa',
-                subfolders: ['Algebra', 'Data Interpretation', 'Mean', 'Median', 'Mode', 'Probability']
+            'Blood Relations': {
+                icon: 'fa-people-roof', colorA: '#db2777', colorB: '#f472b6', type: 'qa',
+                subfolders: ['Blood Relations']
+            },
+            'Direction & Distance': {
+                icon: 'fa-compass', colorA: '#059669', colorB: '#34d399', type: 'qa',
+                subfolders: ['Direction & Distance']
+            },
+            'Order & Ranking': {
+                icon: 'fa-ranking-star', colorA: '#ca8a04', colorB: '#facc15', type: 'qa',
+                subfolders: ['Order & Ranking']
+            },
+            'Math Operations': {
+                icon: 'fa-calculator', colorA: '#2563eb', colorB: '#60a5fa', type: 'qa',
+                subfolders: ['Math Operations']
+            },
+            'Clock & Calendar': {
+                icon: 'fa-clock', colorA: '#0d9488', colorB: '#2dd4bf', type: 'qa',
+                subfolders: ['Clock & Calendar']
+            },
+            'Cubes & Dice': {
+                icon: 'fa-dice', colorA: '#9333ea', colorB: '#c084fc', type: 'qa',
+                subfolders: ['Cubes & Dice']
+            },
+            'Non-Verbal Figures': {
+                icon: 'fa-shapes', colorA: '#dc2626', colorB: '#f87171', type: 'qa',
+                subfolders: ['Non-Verbal Figures']
+            },
+            'Syllogism': {
+                icon: 'fa-diagram-project', colorA: '#475569', colorB: '#94a3b8', type: 'qa',
+                subfolders: ['Syllogism']
+            },
+            'Venn Diagrams': {
+                icon: 'fa-circle-nodes', colorA: '#16a34a', colorB: '#4ade80', type: 'qa',
+                subfolders: ['Venn Diagrams']
+            },
+            'Statement & Logic': {
+                icon: 'fa-comment-dots', colorA: '#c2410c', colorB: '#fb923c', type: 'qa',
+                subfolders: ['Statement & Logic']
+            },
+            'Seating & Puzzles': {
+                icon: 'fa-chair', colorA: '#65a30d', colorB: '#a3e635', type: 'qa',
+                subfolders: ['Seating & Puzzles']
             }
         };
-        const ENGLISH_FOLDERS = MATH_FOLDERS; // alias — the shared rendering/classify logic below references this name
-        const ALL_SUBFOLDERS = Object.values(MATH_FOLDERS).flatMap(g => g.subfolders);
+        const ENGLISH_FOLDERS = REASONING_FOLDERS; // alias — the shared rendering/classify logic below references this name
+        const ALL_SUBFOLDERS = Object.values(REASONING_FOLDERS).flatMap(g => g.subfolders);
+
 
         function groupForSubfolder(subfolder) {
             return Object.keys(ENGLISH_FOLDERS).find(g => ENGLISH_FOLDERS[g].subfolders.includes(subfolder)) || null;
@@ -1430,8 +1523,8 @@
         let currentSubfolder = null;   // subfolder currently shown in entries-view
 
         // ================= STORAGE =================
-        const THIS_APP_PREFIX = 'math_analyzer';
-        const APP_CATEGORY_NAMES = { math_analyzer: 'Maths Classifier' };
+        const THIS_APP_PREFIX = 'reasoning_analyzer';
+        const APP_CATEGORY_NAMES = { reasoning_analyzer: 'Reasoning Analyzer' };
         const ENGLISH_EXAM_ID = 'default'; // single dataset — alias name kept for the shared logic below
         function getStorageKey() { return THIS_APP_PREFIX + '_entries__' + ENGLISH_EXAM_ID; }
 
@@ -1461,25 +1554,15 @@
             wrap.innerHTML = Object.keys(ENGLISH_FOLDERS).map(group => {
                 const g = ENGLISH_FOLDERS[group];
                 const total = entryCountForGroup(group);
-                const chips = g.subfolders.map(sf => {
-                    const c = entryCountForSubfolder(sf);
-                    return `<button onclick="event.stopPropagation(); openEntriesView('${escAttr(sf)}')" class="text-left w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                        <span class="text-[11px] font-semibold text-slate-600 truncate pr-2">${escHtml(sf)}</span>
-                        <span class="text-[10px] font-bold text-slate-400 shrink-0">${c}</span>
-                    </button>`;
-                }).join('');
                 return `
-                <div onclick="openGroupView('${escAttr(group)}')" class="glass-panel rounded-2xl p-5 cursor-pointer border border-slate-200 hover:border-violet-300 transition-all">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md shrink-0" style="background: linear-gradient(135deg, ${g.colorA}, ${g.colorB});">
-                            <i class="fa-solid ${g.icon}"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <h3 class="text-sm font-bold text-slate-900 truncate">${escHtml(group)}</h3>
-                            <p class="text-[11px] text-slate-500 font-semibold">${total} ${total === 1 ? 'entry' : 'entries'}</p>
-                        </div>
+                <div onclick="openGroupView('${escAttr(group)}')" class="glass-panel rounded-2xl p-5 cursor-pointer border border-slate-200 hover:border-violet-300 transition-all flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md shrink-0" style="background: linear-gradient(135deg, ${g.colorA}, ${g.colorB});">
+                        <i class="fa-solid ${g.icon}"></i>
                     </div>
-                    <div class="space-y-1">${chips}</div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-bold text-slate-900 truncate">${escHtml(group)}</h3>
+                        <p class="text-[11px] text-slate-500 font-semibold">${total} ${total === 1 ? 'entry' : 'entries'}</p>
+                    </div>
                 </div>`;
             }).join('');
 
@@ -1489,47 +1572,15 @@
         }
 
         // ================= GROUP VIEW =================
+        // Reasoning has no subfolder layer — each topic folder holds entries directly,
+        // so "opening a group" just jumps straight into that folder's entries view
+        // (kept as its own function/name since nav buttons, breadcrumbs, and the
+        // shared restore-on-sync logic below all call it).
         function openGroupView(group) {
-            currentGroupName = group;
-            const g = ENGLISH_FOLDERS[group];
-            if (!g) { goHome(); return; }
-
-            document.getElementById('dashboard-main').classList.add('hidden');
-            document.getElementById('about-view').classList.add('hidden');
-            document.getElementById('backup-view').classList.add('hidden');
-            document.getElementById('ai-analyzer-view').classList.add('hidden');
-            document.getElementById('history-view').classList.add('hidden');
-            document.getElementById('entries-view').classList.add('hidden');
-            const view = document.getElementById('group-view');
-            view.classList.remove('hidden');
-
-            document.getElementById('group-view-title').querySelector('span').textContent = group;
-            document.getElementById('group-view-icon').className = `fa-solid ${g.icon} text-violet-600`;
-
-            const navIdMap = { 'Number System': 'nav-numsys-btn', 'Arithmetic & Numbers': 'nav-arith-btn', 'Time, Speed & Work': 'nav-tsw-btn', 'Geometry & Trigonometry': 'nav-geo-btn', 'Algebra & Data': 'nav-algebra-btn' };
-            setActiveNav(navIdMap[group] || 'nav-home-btn');
-
-            const wrap = document.getElementById('group-subfolder-cards');
-            wrap.innerHTML = g.subfolders.map(sf => {
-                const c = entryCountForSubfolder(sf);
-                return `
-                <button onclick="openEntriesView('${escAttr(sf)}')" class="glass-panel rounded-2xl p-5 text-left border border-slate-200 hover:border-violet-300 transition-all flex items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-bold text-slate-900 truncate">${escHtml(sf)}</h3>
-                        <p class="text-[11px] text-slate-500 font-semibold mt-0.5">${c} ${c === 1 ? 'entry' : 'entries'}</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
-                </button>`;
-            }).join('');
-
-            tukkaPushScreen('group');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            openEntriesView(group);
         }
 
-        function backToGroupFromEntries() {
-            if (currentGroupName) { openGroupView(currentGroupName); }
-            else { goHome(); }
-        }
+        function backToGroupFromEntries() { goHome(); }
 
         // ================= ENTRIES VIEW =================
         function openEntriesView(subfolder) {
@@ -1554,7 +1605,7 @@
             sortSelect.querySelector('option[value="alpha"]').disabled = (type !== 'vocab');
             sortSelect.value = 'date-desc';
 
-            const navIdMap = { 'Number System': 'nav-numsys-btn', 'Arithmetic & Numbers': 'nav-arith-btn', 'Time, Speed & Work': 'nav-tsw-btn', 'Geometry & Trigonometry': 'nav-geo-btn', 'Algebra & Data': 'nav-algebra-btn' };
+            const navIdMap = { 'Analogy': 'nav-analogy-btn', 'Classification': 'nav-classification-btn', 'Series': 'nav-series-btn', 'Coding-Decoding': 'nav-coding-btn', 'Blood Relations': 'nav-bloodrelations-btn', 'Direction & Distance': 'nav-direction-btn', 'Order & Ranking': 'nav-orderranking-btn', 'Math Operations': 'nav-mathops-btn', 'Clock & Calendar': 'nav-clockcalendar-btn', 'Cubes & Dice': 'nav-cubesdice-btn', 'Non-Verbal Figures': 'nav-nonverbal-btn', 'Syllogism': 'nav-syllogism-btn', 'Venn Diagrams': 'nav-venn-btn', 'Statement & Logic': 'nav-statementlogic-btn', 'Seating & Puzzles': 'nav-seating-btn' };
             setActiveNav(navIdMap[currentGroupName] || 'nav-home-btn');
 
             renderEntriesList();
@@ -1809,23 +1860,25 @@
         // reply, so the app can parse the answer directly (not free-form chat).
         function classifyMistakesInstruction() {
             const folderList = ALL_SUBFOLDERS.map(f => `"${f}"`).join(', ');
-            return `You are sorting a set of maths-exam wrong-question screenshots and/or a screen recording for "Tukka Classifier", a maths mock-test mistake tracker for SSC/Bank/Railway exam aspirants in India. Each file shows one or more questions the user got wrong in a mock test. If a video is included, it's the user flipping through their review screen, pausing briefly on each question.
+            return `You are sorting a set of Logical & Analytical Reasoning exam wrong-question screenshots and/or a screen recording for "Tukka Classifier", a reasoning mock-test mistake tracker for SSC/Bank/Railway exam aspirants in India. Each file shows one or more questions the user got wrong in a mock test. If a video is included, it's the user flipping through their review screen, pausing briefly on each question.
 
 For EVERY distinct wrong question you can identify across all the files, output one JSON object classified into exactly one of these topic folders (use the string verbatim): ${folderList}
 
 Use this exact shape for every object:
-{"folder": "<exact folder name>", "type": "qa", "question": "<the full question text as shown>", "options": ["<option A>", "<option B>", "<option C>", "<option D>"], "correctAnswer": "<the correct option/answer, with the final numeric value or expression>", "explanation": "<a short worked-out solution of how to reach the answer>"}
-(options can be an empty array if the question had none, e.g. a fill-in-the-value question)
+{"folder": "<exact folder name>", "type": "qa", "question": "<the full question text as shown>", "options": ["<option A>", "<option B>", "<option C>", "<option D>"], "correctAnswer": "<the correct option/answer>", "explanation": "<a short explanation of why that's correct>"}
+(options can be an empty array if the question had none)
 
-IMPORTANT — get the final answer right: work through the calculation carefully, step by step, in your own reasoning before writing anything down — a wrong "correctAnswer" is worse than no explanation. Cross-check the final number/expression against the given options before committing to it. Do NOT let a shaky first attempt carry through uncorrected — if your working doesn't match any option cleanly, redo the calculation from scratch rather than forcing an answer.
+IMPORTANT — classify carefully, these topics are easy to confuse: "Analogy" is a single pair/relationship match (A is to B as C is to ?), while "Classification" (odd-one-out) involves picking the item that doesn't fit a group of 4-5. "Series" covers number/letter/figure sequences asking for the next or missing term. "Coding-Decoding" covers letter/number/symbol substitution ciphers. "Syllogism" is strictly two-or-more logical statements followed by conclusions using "All/Some/No" — if it also needs a circle/set diagram to solve, use "Venn Diagrams" instead. "Statement & Logic" covers statement-and-assumption, statement-and-argument, or cause-and-effect questions (not syllogism-style conclusions). "Seating & Puzzles" covers seating arrangements (linear/circular), floor puzzles, and other multi-condition puzzles. "Order & Ranking" is direct rank/position/comparison questions (tallest, age order, position in a row) without a full puzzle setup. "Non-Verbal Figures" covers mirror/water images, paper folding, figure series, and embedded figures — anything shown as shapes/diagrams rather than words or numbers.
 
-IMPORTANT — keep "explanation" SHORT: 2–4 concise steps or sentences, showing only the key formula/substitution/final steps — not a long derivation, not every intermediate line of algebra, and never a rambling or repeated recalculation. If a step-by-step table (e.g. comparing values, a DI table) genuinely helps, format it as a markdown pipe table — but keep even that compact (few rows, not a full working sheet).
+IMPORTANT — get the answer right: reason through each question carefully before writing anything down — a wrong "correctAnswer" is worse than no explanation.
 
-IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression (in the question, options, correctAnswer, or explanation) using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). This lets the app render it properly instead of as raw text.
+IMPORTANT — keep "explanation" SHORT: 1–3 concise sentences with the key fact or reasoning — not a long essay.
+
+If a question involves a diagram, figure, or arrangement that can't be captured in plain text (e.g. Non-Verbal Figures, Cubes & Dice, Venn Diagrams), describe it clearly and concisely in words within "question" or "explanation" rather than omitting it. If a question involves a mathematical expression, write it using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(15 + 6 \\div 3\\\\). This lets the app render it properly instead of as raw text.
 
 Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "type": "qa", ...}, {"folder": "...", "type": "qa", ...}]
 
-If a file clearly isn't from a maths mock-test review screen at all, just skip it. If NONE of the files show any wrong questions, reply with exactly: []`;
+If a file clearly isn't from a reasoning mock-test review screen at all, just skip it. If NONE of the files show any wrong questions, reply with exactly: []`;
         }
 
         async function classifyMistakeFiles() {
@@ -2441,9 +2494,9 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
         // Turns the app's stored mistake entries into a compact text briefing
         // so Gemini has real context, without a Tukka Classifier server holding it.
         function buildEntriesContextSummary() {
-            if (!entries.length) return 'The user has not logged any wrong maths questions yet in Tukka Classifier — Maths Classifier.';
+            if (!entries.length) return 'The user has not logged any wrong reasoning questions yet in Tukka Classifier — Reasoning Analyzer.';
             const lines = [];
-            lines.push(`The user tracks maths mock-test wrong questions (Number System, Algebra, Mensuration, DI, etc.) for SSC/Bank/Railway exam prep in an app called Tukka Classifier. They have logged ${entries.length} question(s) total.`);
+            lines.push(`The user tracks reasoning mock-test wrong questions (Analogy, Classification, Series, Coding-Decoding, Blood Relations, Direction & Distance, Order & Ranking, Math Operations, Clock & Calendar, Cubes & Dice, Non-Verbal Figures, Syllogism, Venn Diagrams, Statement & Logic, Seating & Puzzles, etc.) for SSC/Bank/Railway exam prep in an app called Tukka Classifier. They have logged ${entries.length} question(s) total.`);
             const byFolder = {};
             entries.forEach(e => { byFolder[e.folder] = (byFolder[e.folder] || 0) + 1; });
             lines.push('Counts by topic folder: ' + Object.keys(byFolder).map(f => `${f} (${byFolder[f]})`).join(', ') + '.');
@@ -2455,7 +2508,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
             return lines.join('\n');
         }
         function aiSystemInstruction() {
-            return `You are the "AI Analyzer" inside Tukka Classifier's Maths Classifier, helping an SSC/Bank/Railway exam aspirant in India revise from their logged wrong questions. Speak directly to the student, be encouraging but honest, and keep answers focused and practical (short paragraphs or bullet points, not walls of text). You can be asked about their logged question data (given below), general maths exam strategy/shortcuts, or a specific question they point you to (via the wand icon). Whenever you write a formula, equation, or expression, wrap it in LaTeX delimiters — \\\\(...\\\\) for inline or $$...$$ for a display block — the app renders these properly. If a step-by-step working or comparison would help, use markdown pipe-table syntax — the app renders it as a real table.\n\n=== USER'S LOGGED WRONG QUESTIONS ===\n${buildEntriesContextSummary()}\n=== END OF LOGGED WRONG QUESTIONS ===`;
+            return `You are the "AI Analyzer" inside Tukka Classifier's Reasoning Analyzer, helping an SSC/Bank/Railway exam aspirant in India revise from their logged wrong questions. Speak directly to the student, be encouraging but honest, and keep answers focused and practical (short paragraphs or bullet points, not walls of text). You can be asked about their logged question data (given below), general reasoning exam strategy/revision tips (shortcut tricks for puzzles, syllogism rules, etc.), or a specific question they point you to (via the wand icon). If a question needs a formula or equation, wrap it in LaTeX delimiters — \\\\(...\\\\) for inline or $$...$$ for a display block — the app renders these properly. If a comparison or step-by-step table would help (e.g. laying out a seating puzzle grid), use markdown pipe-table syntax — the app renders it as a real table.\n\n=== USER'S LOGGED WRONG QUESTIONS ===\n${buildEntriesContextSummary()}\n=== END OF LOGGED WRONG QUESTIONS ===`;
         }
 
                 // ================= DARK MODE / MOBILE NAV / SHELL NAV =================
@@ -2651,7 +2704,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
         // ---------- Quick Export / Import (local JSON backup) ----------
         function exportDataJSON() {
             try {
-                const payload = { app: 'Maths Classifier', version: 1, exportedAt: new Date().toISOString(), entries: entries };
+                const payload = { app: 'Reasoning Analyzer', version: 1, exportedAt: new Date().toISOString(), entries: entries };
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -2684,7 +2737,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
                     return;
                 }
                 const incoming = Array.isArray(parsed.entries) ? parsed.entries : null;
-                if (!incoming) { showToast("That doesn't look like a Maths Classifier backup file.", 'error'); return; }
+                if (!incoming) { showToast("That doesn't look like a Reasoning Analyzer backup file.", 'error'); return; }
 
                 showConfirmModal(
                     'Import Backup?',
@@ -2774,9 +2827,10 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
         // combined backup file — connecting once from ANY of them covers this
         // app too, nothing extra to set up here.
         //
-        // Note: this app's own push only knows its own 'math_analyzer' prefix.
-        // The English Classifier's push only knows its own 'eng_analyzer' prefix.
-        // Each merges via a read-before-write against the shared Drive file, so
+        // Note: this app's own push only knows its own 'reasoning_analyzer' prefix.
+        // The English/Maths Classifiers' pushes only know their own 'eng_analyzer'/
+        // 'math_analyzer' prefixes. Each merges via a read-before-write against the
+        // shared Drive file, so
         // all four apps' data coexists in one backup without any overwriting the other.
         const DRIVE_CLIENT_ID = '766379515513-ufmc75dpic898902tughujruoign5fnh.apps.googleusercontent.com';
         const DRIVE_CONNECTED_KEY = 'tukka_drive_connected';
@@ -2961,7 +3015,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
         }
 
         // Pushes a combined backup to Drive. This app only knows its own
-        // 'math_analyzer' prefix (see note above APP_CATEGORY_NAMES), so it
+        // 'reasoning_analyzer' prefix (see note above APP_CATEGORY_NAMES), so it
         // always includes this app's current data under that key.
         function collectFullAppBackup() {
             localStorage.setItem(getStorageKey(), JSON.stringify(entries));
@@ -2989,7 +3043,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
                     updateSyncStatus('syncing');
                     // Merge-read-first: pull whatever's on Drive right now and keep
                     // every OTHER app's section untouched, only overwriting our own
-                    // 'math_analyzer' key. This protects the English Classifier's data
+                    // 'reasoning_analyzer' key. This protects the other two apps' data
                     // (and vice versa) from this app's push even without editing its file.
                     let existingData = {};
                     try {

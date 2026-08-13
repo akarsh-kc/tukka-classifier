@@ -706,9 +706,9 @@
                 <span class="hidden lg:inline">Home</span>
                 <span class="nav-active-dot hidden lg:block"></span>
             </button>
-            <button onclick="tukkaSwitchCategory()" id="nav-category-btn" class="nav-pill" style="--pill-a:#e11d48;--pill-b:#fb7185;--pill-glow:rgba(225,29,72,.55)" title="Switch App (English / Maths)">
+            <button onclick="tukkaSwitchCategory()" id="nav-category-btn" class="nav-pill" style="--pill-a:#e11d48;--pill-b:#fb7185;--pill-glow:rgba(225,29,72,.55)" title="Switch App (English / Maths / GK)">
                 <span class="nav-icon-wrap"><i class="fa-solid fa-shapes"></i></span><span class="hidden lg:inline truncate">Switch App</span>
-                <i class="fa-solid fa-toggle-on hidden lg:block absolute right-[0.65rem] top-1/2 -translate-y-1/2 text-amber-500 text-xs" title="Switch between English / Maths"></i>
+                <i class="fa-solid fa-toggle-on hidden lg:block absolute right-[0.65rem] top-1/2 -translate-y-1/2 text-amber-500 text-xs" title="Switch between English / Maths / GK"></i>
             </button>
 
             <div class="nav-divider"></div>
@@ -1328,7 +1328,7 @@
                     <i class="fa-brands fa-google-drive text-brand-600 dark:text-brand-400 text-2xl"></i>
                 </div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed px-1">
-                    Sign in with your Google account to back up <span class="font-semibold">both English Classifier &amp; Maths Classifier together</span> — to Google Drive in one file. Connect once from either app and it covers both; sign in with that same account on any other device — PC, tablet, or phone — and everything carries over automatically. Completely optional, the app still works fully offline.
+                    Sign in with your Google account to back up <span class="font-semibold">English Classifier, Maths Classifier, GK Analyzer &amp; Reasoning Analyzer together</span> — to Google Drive in one file. Connect once from any app and it covers all four; sign in with that same account on any other device — PC, tablet, or phone — and everything carries over automatically. Completely optional, the app still works fully offline.
                 </p>
             </div>
 
@@ -2915,7 +2915,7 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
             driveTokenExpiry = 0;
             if (tokenToRevoke && window.google && google.accounts && google.accounts.oauth2) { google.accounts.oauth2.revoke(tokenToRevoke, () => {}); }
             updateSyncStatus('off');
-            showToast('Disconnected from Google Drive (both apps).', 'info');
+            showToast('Disconnected from Google Drive (all four apps).', 'info');
             closeSyncModal();
         }
 
@@ -2923,7 +2923,7 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
             if (!isDriveConnected()) { showToast('Not connected to Google Drive.', 'error'); return; }
             showConfirmModal(
                 '⚠️ Delete Cloud Backup?',
-                `This permanently deletes your "${driveFileName()}" backup from Google Drive — the SHARED file covering English Classifier & Maths Classifier together — and disconnects sync in both apps. Google cannot recover it afterwards, and this cannot be undone. Your data on this device is safe and stays exactly as it is, but you won't be able to restore any of it on another device unless you sync again from here first.`,
+                `This permanently deletes your "${driveFileName()}" backup from Google Drive — the SHARED file covering English Classifier, Maths Classifier, GK Analyzer & Reasoning Analyzer together — and disconnects sync across all four apps. Google cannot recover it afterwards, and this cannot be undone. Your data on this device is safe and stays exactly as it is, but you won't be able to restore any of it on another device unless you sync again from here first.`,
                 deleteDriveBackup
             );
         }
