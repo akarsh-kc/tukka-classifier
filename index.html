@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Tukka Classifier | English & Math Wrong-Question Tracker</title>
+
+    <!-- PWA setup -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="color-scheme" content="light dark">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tukka Classifier">
+    <link rel="icon" href="icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script>
+        (function () {
+            try {
+                // Default is light mode. Dark mode only activates if the user has
+                // explicitly turned it on before (stored 'true') — never based on
+                // OS/browser preference, so first-time loads are always light.
+                if (localStorage.getItem('tukka_dark_mode') === null) {
+                    localStorage.setItem('tukka_dark_mode', 'false');
+                }
+                if (localStorage.getItem('tukka_dark_mode') === 'true') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 500: '#6366f1',
+                            600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#2e2a6b',
+                        },
+                        accent: { amber: '#f59e0b', rose: '#fb3d68', emerald: '#10d9a3', purple: '#a855f7', cyan: '#22d3ee' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        glow: '0 0 0 1px rgba(99,102,241,0.15), 0 8px 24px -8px rgba(99,102,241,0.35)',
+                        'glow-lg': '0 0 40px -8px rgba(99,102,241,0.45)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Tell the browser exactly which scheme is active right now, instead of
+           the static "light dark" from the meta tag above. Some mobile browsers
+           (Samsung Internet, Chrome's "Force Dark") auto-darken native UI/colors
+           on pages that claim to support both schemes but don't declare which one
+           is actually in effect — this pins it to whatever .dark reflects. */
+        html { color-scheme: light; }
+        html.dark { color-scheme: dark; }
+
+        html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f4f6fb; }
+        html.dark body { background: #05070f; }
+
+        #app-frame {
+            position: fixed; inset: 0; width: 100%; height: 100dvh; border: 0; display: block;
+            background: #f4f6fb;
+        }
+        html.dark #app-frame { background: #05070f; }
+
+        #boot-loader {
+            position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 12px; background: #f4f6fb; transition: opacity .4s ease;
+        }
+        html.dark #boot-loader { background: #05070f; }
+
+        #switcher-overlay {
+            position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+            padding: 16px; background: rgba(15,18,35,0.55); backdrop-filter: blur(6px);
+        }
+        #switcher-overlay.open { display: flex; }
+        #switcher-overlay.onboarding { background: radial-gradient(circle at 50% 0%, rgba(79,70,229,0.25), transparent 60%), #f4f6fb; backdrop-filter: none; }
+        html.dark #switcher-overlay.onboarding { background: radial-gradient(circle at 50% 0%, rgba(79,70,229,0.35), transparent 60%), #05070f; }
+
+        .switcher-panel {
+            width: 100%; max-width: 640px; max-height: 88dvh; overflow-y: auto;
+            background: #ffffff; border-radius: 1.75rem; box-shadow: 0 0 0 1px rgba(99,102,241,0.12), 0 24px 60px -20px rgba(30,27,75,0.45);
+            padding: 22px 20px 26px;
+        }
+        html.dark .switcher-panel { background: #0b0f20; box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 24px 60px -20px rgba(0,0,0,0.6); }
+
+        .cat-tab {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px;
+            border-radius: 1.1rem; border: 1.5px solid transparent; background: #f8fafc; cursor: pointer;
+            transition: all .2s ease; text-align: center;
+        }
+        html.dark .cat-tab { background: #131a30; }
+        .cat-tab:hover { transform: translateY(-2px); }
+        .cat-tab.active {
+            border-color: var(--cat-a); background: linear-gradient(160deg, color-mix(in srgb, var(--cat-a) 12%, white), color-mix(in srgb, var(--cat-b) 8%, white));
+            box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--cat-a) 55%, transparent);
+        }
+        html.dark .cat-tab.active { background: linear-gradient(160deg, color-mix(in srgb, var(--cat-a) 22%, #0b0f20), color-mix(in srgb, var(--cat-b) 14%, #0b0f20)); }
+        .cat-tab .cat-icon {
+            width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 17px; background: linear-gradient(135deg, var(--cat-a), var(--cat-b));
+            box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--cat-a) 60%, transparent);
+        }
+        .cat-tab .cat-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12.5px; color: #1e293b; }
+        html.dark .cat-tab .cat-name { color: #f1f5f9; }
+        .cat-tab .cat-sub { font-size: 10px; color: #64748b; font-weight: 500; }
+
+        .exam-pill {
+            position: relative; width: 100%; display: flex; align-items: flex-start; gap: 11px; padding: 11px 13px;
+            border-radius: 0.9rem; border: 1px solid #e2e8f0; background: #fff; cursor: pointer;
+            transition: all .15s ease; text-align: left;
+        }
+        html.dark .exam-pill { background: #131a30; border-color: rgba(148,163,184,0.15); }
+        .exam-pill:hover { border-color: var(--cat-a); transform: translateX(2px); }
+        .exam-pill:active { transform: scale(0.98); }
+        .exam-pill.current { border-color: var(--cat-a); background: color-mix(in srgb, var(--cat-a) 7%, white); }
+        html.dark .exam-pill.current { background: color-mix(in srgb, var(--cat-a) 16%, #131a30); }
+        .exam-pill .exam-icon {
+            width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 13px; background: linear-gradient(135deg, var(--cat-a), var(--cat-b)); flex-shrink: 0; margin-top: 1px;
+        }
+        .exam-pill .exam-text { min-width: 0; flex: 1; padding-right: 22px; }
+        .exam-pill .exam-name { display: block; font-size: 12.5px; font-weight: 700; color: #1e293b; line-height: 1.3; }
+        html.dark .exam-pill .exam-name { color: #f1f5f9; }
+        .exam-pill .exam-desc { display: block; font-size: 10.5px; color: #94a3b8; font-weight: 500; line-height: 1.35; margin-top: 2px; }
+        html.dark .exam-pill .exam-desc { color: #64748b; }
+        .exam-pill .current-badge {
+            position: absolute; top: 9px; right: 9px; width: 16px; height: 16px; border-radius: 999px;
+            display: flex; align-items: center; justify-content: center; font-size: 8px; color: #fff;
+            background: linear-gradient(135deg, var(--cat-a), var(--cat-b)); flex-shrink: 0;
+        }
+
+        #exam-grid { display: flex; flex-direction: column; gap: 7px; max-height: 44vh; overflow-y: auto; padding-right: 2px; }
+        #exam-grid::-webkit-scrollbar { width: 5px; }
+        #exam-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        html.dark #exam-grid::-webkit-scrollbar-thumb { background: #334155; }
+
+        /* ---- Special exam entry (kept for a possible future standalone add-on) ----
+           Same exam-pill shell, but with its own gradient border/glow (driven by
+           the exam's own --cat-a/--cat-b, set per-item rather than per-category),
+           a small animated ring, a corner star icon, and a "SPECIAL" chip next
+           to its name — so it visually stands apart from the regular exam list. */
+        .exam-pill-special {
+            border-width: 1.5px;
+            border-color: color-mix(in srgb, var(--cat-a) 55%, transparent);
+            background: linear-gradient(160deg, color-mix(in srgb, var(--cat-a) 10%, white), color-mix(in srgb, var(--cat-b) 7%, white));
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat-a) 18%, transparent), 0 10px 24px -12px color-mix(in srgb, var(--cat-a) 60%, transparent);
+        }
+        html.dark .exam-pill-special {
+            background: linear-gradient(160deg, color-mix(in srgb, var(--cat-a) 24%, #0b0f20), color-mix(in srgb, var(--cat-b) 16%, #0b0f20));
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat-a) 35%, transparent), 0 10px 26px -12px color-mix(in srgb, var(--cat-a) 70%, transparent);
+        }
+        .exam-pill-special:hover { transform: translateX(2px) translateY(-1px); }
+        .exam-pill-special .exam-icon { position: relative; }
+        .exam-special-star {
+            position: absolute; top: -6px; left: -6px; font-size: 8px; color: #fff;
+            background: linear-gradient(135deg, var(--cat-a), var(--cat-b)); border-radius: 999px;
+            width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 0 2px #fff; animation: specialPulse 2.2s ease-in-out infinite;
+        }
+        html.dark .exam-special-star { box-shadow: 0 0 0 2px #0b0f20; }
+        @keyframes specialPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .exam-special-badge {
+            display: inline-block; vertical-align: middle; margin-left: 4px; padding: 1px 6px;
+            font-size: 8px; font-weight: 800; letter-spacing: 0.04em; color: #fff; border-radius: 999px;
+            background: linear-gradient(135deg, var(--cat-a), var(--cat-b));
+        }
+
+        .fade-in { animation: fadeIn .25s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ---- Announcement popup (reusable — see ANNOUNCEMENT config in script) ---- */
+        #announce-overlay {
+            position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center;
+            padding: 16px; background: rgba(15,18,35,0.55); backdrop-filter: blur(6px);
+        }
+        #announce-overlay.open { display: flex; }
+        .announce-panel {
+            width: 100%; max-width: 400px; background: #ffffff; border-radius: 1.5rem;
+            box-shadow: 0 0 0 1px rgba(99,102,241,0.12), 0 24px 60px -20px rgba(30,27,75,0.45);
+            padding: 22px 20px 20px; text-align: center;
+        }
+        html.dark .announce-panel { background: #0b0f20; box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 24px 60px -20px rgba(0,0,0,0.6); }
+        .announce-icon {
+            width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 21px; background: linear-gradient(135deg, #4f46e5, #818cf8);
+            box-shadow: 0 8px 20px -8px rgba(79,70,229,0.55);
+        }
+        .announce-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15.5px; color: #1e293b; margin-bottom: 6px; }
+        html.dark .announce-title { color: #f1f5f9; }
+        .announce-message { font-size: 12.5px; color: #64748b; font-weight: 500; line-height: 1.6; margin-bottom: 18px; text-align: left; white-space: pre-line; }
+        html.dark .announce-message { color: #94a3b8; }
+        .announce-btn {
+            width: 100%; padding: 11px; border-radius: 0.9rem; border: none; cursor: pointer;
+            background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; font-weight: 700; font-size: 13px;
+            font-family: 'Inter', sans-serif; transition: transform .15s ease;
+        }
+        .announce-btn:active { transform: scale(0.97); }
+    </style>
+</head>
+<body>
+
+    <!-- Boot loader shown until we decide: onboarding picker vs. straight into last-used app -->
+    <div id="boot-loader">
+        <div class="rounded-2xl shadow-glow overflow-hidden w-16 h-16">
+            <img src="icon-512.png" alt="Tukka Classifier" class="w-full h-full object-contain">
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Made by Akarsh K C❤️</p>
+        <h1 class="text-sm font-bold font-display text-slate-800 dark:text-slate-100 text-center">Tukka Classifier</h1>
+        <i class="fa-solid fa-spinner fa-spin text-brand-500 text-base mt-1"></i>
+    </div>
+
+    <!-- The active category's app lives here, full-viewport -->
+    <iframe id="app-frame" title="Tukka Classifier"></iframe>
+
+    <!-- Category + exam switcher -->
+    <div id="switcher-overlay">
+        <div class="switcher-panel fade-in">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="rounded-xl shadow-glow overflow-hidden shrink-0 w-11 h-11">
+                        <img src="icon-512.png" alt="Tukka Classifier" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold font-display text-slate-800 dark:text-slate-100 leading-tight">Tukka Classifier</h2>
+                        <p id="switcher-tagline" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Pick English or Maths to get started. You can switch between them anytime.</p>
+                    </div>
+                </div>
+                <button id="switcher-close-btn" onclick="closeSwitcher()" class="hidden w-8 h-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="cat-tabs" class="flex gap-2.5 mb-5"></div>
+
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2.5 px-0.5">
+                    <i class="fa-solid fa-list-check mr-1"></i> Choose your exam
+                </p>
+                <div id="exam-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement popup (reusable — content comes from ANNOUNCEMENT config below) -->
+    <div id="announce-overlay">
+        <div class="announce-panel fade-in">
+            <div class="announce-icon"><i class="fa-solid fa-bullhorn"></i></div>
+            <div id="announce-title" class="announce-title"></div>
+            <div id="announce-message" class="announce-message"></div>
+            <button class="announce-btn" onclick="closeAnnouncement()">Got it</button>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================================
+        // Tukka Classifier — hub shell
+        // Hosts two self-contained category apps (English / Maths),
+        // each with its own isolated localStorage namespace, inside an
+        // iframe. This file only handles: which category+exam is active,
+        // remembering the last-used one, and the switcher UI.
+        // ===================================================================
+
+        const LAST_CATEGORY_KEY = 'tukka_last_category';
+
+        // ===================================================================
+        // ANNOUNCEMENT — reusable popup for updates, new features, or notices.
+        // To post a new announcement: just change the values below and commit.
+        // - id: change this to any new short text every time (so a dismissed
+        //   old announcement doesn't block a new one)
+        // - date: format YYYY-MM-DD — the popup shows from this date onward
+        //   (the user's device "today"), until they dismiss it or endDate passes.
+        //   It no longer requires an EXACT date match, since that used to
+        //   silently skip anyone whose clock/timezone was off by even a day,
+        //   or who simply didn't open the app on that one specific day.
+        // - endDate: format YYYY-MM-DD, inclusive — last day the popup is
+        //   eligible to show (on the user's device "today"). Optional: leave
+        //   it out (or null) for an announcement with no cutoff, shown until
+        //   dismissed. Whichever is later, dismissal or endDate still wins.
+        // - title / message: whatever you want to tell users
+        // Never duplicate this block for a new announcement — just overwrite
+        // these values each time, so the file size never grows.
+        // ===================================================================
+        const ANNOUNCEMENT = {
+            id: 'update-2026-08-13',
+            date: '2026-08-13',
+            endDate: '2026-08-16',
+            title: "What's new ✨",
+            message: '• Tukka Classifier is now focused on two apps: English Classifier & Maths Classifier\n• New: AI Analyzer chat in both apps — ask Gemini about any logged question\n• New: tap the wand icon on any entry to ask AI about that exact question\n• Maths Classifier now covers 30 topics, regrouped, with formulas, equations & tables rendered properly'
+        };
+
+        function getLocalDateStr() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function maybeShowAnnouncement() {
+            try {
+                const today = getLocalDateStr();
+                // Shows any day on/after ANNOUNCEMENT.date, and on/before ANNOUNCEMENT.endDate
+                // (if set) — dismissal (by id) or the endDate cutoff is what stops it from
+                // showing again, not an exact date match.
+                if (today < ANNOUNCEMENT.date) return;
+                if (ANNOUNCEMENT.endDate && today > ANNOUNCEMENT.endDate) return;
+                if (localStorage.getItem('tukka_announcement_seen') === ANNOUNCEMENT.id) return;
+                document.getElementById('announce-title').textContent = ANNOUNCEMENT.title;
+                document.getElementById('announce-message').textContent = ANNOUNCEMENT.message;
+                document.getElementById('announce-overlay').classList.add('open');
+            } catch (e) {}
+        }
+
+        function closeAnnouncement() {
+            try { localStorage.setItem('tukka_announcement_seen', ANNOUNCEMENT.id); } catch (e) {}
+            document.getElementById('announce-overlay').classList.remove('open');
+        }
+
+        const CATEGORIES = {
+            english: {
+                id: 'english', file: 'apps/english.html', examKey: 'english_current_exam',
+                name: 'English', sub: 'Vocabulary, Grammar & Reading', icon: 'fa-language',
+                colorA: '#7c3aed', colorB: '#c084fc',
+                exams: [
+                    { id: 'english_analyzer', short: 'English Classifier', desc: 'Upload mock mistakes — Gemini sorts them into Vocabulary, Grammar & Reading folders automatically, plus an AI chat to ask about any of them', icon: 'fa-language' }
+                ]
+            },
+            maths: {
+                id: 'maths', file: 'apps/maths.html', examKey: 'maths_current_exam',
+                name: 'Maths', sub: '30 topics, wrong-question tracker', icon: 'fa-square-root-variable',
+                colorA: '#9333ea', colorB: '#ec4899',
+                exams: [
+                    { id: 'maths_analyzer', short: 'Maths Classifier', desc: 'Upload mock mistakes — Gemini sorts them into 30 topic folders automatically, with formulas, equations & tables rendered properly, plus an AI chat to ask about any of them', icon: 'fa-square-root-variable' }
+                ]
+            }
+        };
+
+        const frame = document.getElementById('app-frame');
+        const overlay = document.getElementById('switcher-overlay');
+        const closeBtn = document.getElementById('switcher-close-btn');
+        const tagline = document.getElementById('switcher-tagline');
+        const catTabsEl = document.getElementById('cat-tabs');
+        const examGridEl = document.getElementById('exam-grid');
+
+        let activeCategory = localStorage.getItem(LAST_CATEGORY_KEY) || null;
+        let pickerCategory = activeCategory || 'english'; // which tab the switcher is showing
+
+        function catVars(cat) { return `--cat-a:${cat.colorA};--cat-b:${cat.colorB};`; }
+
+        function renderCatTabs() {
+            catTabsEl.innerHTML = Object.values(CATEGORIES).map(cat => `
+                <button class="cat-tab ${cat.id === pickerCategory ? 'active' : ''}" style="${catVars(cat)}" onclick="selectPickerCategory('${cat.id}')">
+                    <span class="cat-icon"><i class="fa-solid ${cat.icon}"></i></span>
+                    <span class="cat-name">${cat.name}</span>
+                    <span class="cat-sub">${cat.sub}</span>
+                </button>
+            `).join('');
+        }
+
+        function renderExamGrid() {
+            const cat = CATEGORIES[pickerCategory];
+            const currentExamId = cat.id === activeCategory ? localStorage.getItem(cat.examKey) : null;
+            examGridEl.style.setProperty('--cat-a', cat.colorA);
+            examGridEl.style.setProperty('--cat-b', cat.colorB);
+            examGridEl.innerHTML = cat.exams.map(ex => {
+                const vars = ex.color ? `--cat-a:${ex.color.a};--cat-b:${ex.color.b};` : catVars(cat);
+                const specialClass = ex.special ? 'exam-pill-special' : '';
+                return `
+                <button class="exam-pill ${specialClass} ${ex.id === currentExamId ? 'current' : ''}" style="${vars}" onclick="pickExam('${cat.id}', '${ex.id}')">
+                    <span class="exam-icon">${ex.special ? '<i class="fa-solid fa-star exam-special-star"></i>' : ''}<i class="fa-solid ${ex.icon}"></i></span>
+                    <span class="exam-text">
+                        <span class="exam-name">${ex.short}${ex.special ? ' <span class="exam-special-badge">SPECIAL</span>' : ''}</span>
+                        <span class="exam-desc">${ex.desc}</span>
+                    </span>
+                    ${ex.id === currentExamId ? '<span class="current-badge" title="Current"><i class="fa-solid fa-check"></i></span>' : ''}
+                </button>`;
+            }).join('');
+        }
+
+        function selectPickerCategory(catId) {
+            pickerCategory = catId;
+            renderCatTabs();
+            renderExamGrid();
+        }
+
+        function pickExam(catId, examId) {
+            const cat = CATEGORIES[catId];
+            const ex = cat.exams.find(e => e.id === examId);
+            // A "special" exam entry can point at its own standalone app file
+            // (kept for a possible future standalone add-on) instead of living inside
+            // the category's main app — it always gets a fresh full load, since
+            // there's no shared switchExam() to hand it off to.
+            const targetFile = (ex && ex.file) ? ex.file : cat.file;
+            const sameCategoryAlreadyLoaded = (catId === activeCategory) && frame.getAttribute('src') && !(ex && ex.file);
+
+            localStorage.setItem(LAST_CATEGORY_KEY, catId);
+            localStorage.setItem(cat.examKey, examId);
+            activeCategory = catId;
+
+            if (ex && ex.file) {
+                // Standalone dedicated app — always a full load, no in-place switch.
+                frame.src = ex.file + '?ts=' + Date.now();
+            } else if (sameCategoryAlreadyLoaded) {
+                // Same app already running in the iframe — switch instantly in place,
+                // no reload, via the app's own exam-switch function.
+                try {
+                    frame.contentWindow.switchExam(examId);
+                } catch (e) {
+                    frame.src = targetFile + '?ts=' + Date.now();
+                }
+            } else {
+                frame.src = targetFile + '?ts=' + Date.now();
+            }
+            closeSwitcher();
+        }
+
+        function openSwitcher(onboarding) {
+            syncShellDarkModeFromStorage();
+            pickerCategory = activeCategory || 'english';
+            renderCatTabs();
+            renderExamGrid();
+            overlay.classList.add('open');
+            if (onboarding) {
+                overlay.classList.add('onboarding');
+                closeBtn.classList.add('hidden');
+                tagline.textContent = 'Pick English or Maths to get started. You can switch between them anytime.';
+            } else {
+                overlay.classList.remove('onboarding');
+                closeBtn.classList.remove('hidden');
+                tagline.textContent = 'Switch between English & Maths anytime';
+            }
+        }
+
+        function closeSwitcher() {
+            if (!activeCategory) return; // must choose one on first run
+            overlay.classList.remove('open');
+        }
+
+        // ---- Keep this shell's own <html class="dark"> in sync with whichever
+        // category app is loaded in the iframe. The apps each have their own dark
+        // mode toggle that flips *their* document's class and writes to the shared
+        // 'tukka_dark_mode' localStorage key — but that never touches this parent
+        // document on its own, so the switcher modal (which lives here, not in the
+        // iframe) would otherwise keep showing whatever theme was active on boot.
+        function applyShellDarkMode(isDark) {
+            document.documentElement.classList.toggle('dark', !!isDark);
+        }
+
+        function syncShellDarkModeFromStorage() {
+            try {
+                applyShellDarkMode(localStorage.getItem('tukka_dark_mode') === 'true');
+            } catch (e) {}
+        }
+
+        // A category app's sidebar posts this when its "Switch App" nav item is tapped.
+        // It also posts 'tukka:darkModeChanged' whenever its own theme toggle is used.
+        window.addEventListener('message', (event) => {
+            if (event.source !== frame.contentWindow || !event.data) return;
+            if (event.data.type === 'tukka:openSwitcher') {
+                syncShellDarkModeFromStorage();
+                openSwitcher(false);
+            } else if (event.data.type === 'tukka:darkModeChanged') {
+                applyShellDarkMode(event.data.dark);
+            }
+        });
+
+        // Fallback for cases where postMessage timing is missed (e.g. the toggle
+        // fires before this listener is attached, or a browser quirk drops it):
+        // 'storage' fires in this (parent) document whenever the iframe's document
+        // writes to localStorage, since both are same-origin browsing contexts.
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'tukka_dark_mode') applyShellDarkMode(event.newValue === 'true');
+        });
+
+        // ---- boot ----
+        function boot() {
+            document.getElementById('boot-loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('boot-loader').remove(), 400);
+
+            if (activeCategory && CATEGORIES[activeCategory]) {
+                const cat = CATEGORIES[activeCategory];
+                const savedExamId = localStorage.getItem(cat.examKey);
+                const ex = cat.exams.find(e => e.id === savedExamId);
+                frame.src = (ex && ex.file) ? ex.file : cat.file;
+            } else {
+                openSwitcher(true);
+            }
+            setTimeout(maybeShowAnnouncement, 500);
+        }
+        boot();
+
+        // ---- PWA service worker ----
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
