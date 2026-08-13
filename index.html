@@ -242,7 +242,7 @@
                     </div>
                     <div>
                         <h2 class="text-base font-bold font-display text-slate-800 dark:text-slate-100 leading-tight">Tukka Classifier</h2>
-                        <p id="switcher-tagline" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Pick English, Maths, GK, or Reasoning to get started. You can switch between them anytime.</p>
+                        <p id="switcher-tagline" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Pick English, Maths, GK, Reasoning, or Speed Booster to get started. You can switch between them anytime.</p>
                     </div>
                 </div>
                 <button id="switcher-close-btn" onclick="closeSwitcher()" class="hidden w-8 h-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5" aria-label="Close">
@@ -368,6 +368,14 @@
                 exams: [
                     { id: 'reasoning_analyzer', short: 'Reasoning Analyzer', desc: 'Upload mock mistakes — Gemini sorts them into Analogy, Classification, Series, Coding-Decoding, Blood Relations, Direction & Distance, Order & Ranking, Math Operations, Clock & Calendar, Cubes & Dice, Non-Verbal Figures, Syllogism, Venn Diagrams, Statement & Logic & Seating & Puzzles folders automatically, plus an AI chat to ask about any of them', icon: 'fa-puzzle-piece' }
                 ]
+            },
+            speedbooster: {
+                id: 'speedbooster', file: 'apps/speed-booster.html', examKey: 'speedbooster_current_exam',
+                name: 'Speed Booster', sub: 'Timed maths drills & practice', icon: 'fa-bolt',
+                colorA: '#059669', colorB: '#f59e0b',
+                exams: [
+                    { id: 'speedbooster_tool', short: 'Maths Speed Booster', desc: 'Timed drills across 20+ maths topics — simplification, series, percentages, trigonometry, tables and more — with a dashboard tracking your speed and accuracy over time', icon: 'fa-bolt' }
+                ]
             }
         };
 
@@ -460,11 +468,11 @@
             if (onboarding) {
                 overlay.classList.add('onboarding');
                 closeBtn.classList.add('hidden');
-                tagline.textContent = 'Pick English, Maths, GK, or Reasoning to get started. You can switch between them anytime.';
+                tagline.textContent = 'Pick English, Maths, GK, Reasoning, or Speed Booster to get started. You can switch between them anytime.';
             } else {
                 overlay.classList.remove('onboarding');
                 closeBtn.classList.remove('hidden');
-                tagline.textContent = 'Switch between English, Maths, GK & Reasoning anytime';
+                tagline.textContent = 'Switch between English, Maths, GK, Reasoning & Speed Booster anytime';
             }
         }
 

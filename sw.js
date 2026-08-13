@@ -1,12 +1,15 @@
 // Bump this on every deploy (or automate it — see notes below).
-const CACHE_NAME = "tukka-classifier-cache-v2";
+const CACHE_NAME = "tukka-classifier-cache-v3";
 const CORE_ASSETS = [
   "./index.html",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
   "./apps/english.html",
-  "./apps/maths.html"
+  "./apps/maths.html",
+  "./apps/gk.html",
+  "./apps/reasoning.html",
+  "./apps/speed-booster.html"
 ];
 
 self.addEventListener("install", (event) => {
@@ -42,7 +45,7 @@ self.addEventListener("fetch", (event) => {
 
   // Network-first for the app shell / any HTML document — this covers the
   // top-level hub (index.html) AND every category app loaded inside its
-  // iframe (apps/english.html, apps/maths.html),
+  // iframe (apps/english.html, apps/maths.html, apps/gk.html, apps/reasoning.html, apps/speed-booster.html),
   // so a new deploy is picked up on next load instead of being served stale.
   // Falls back to cache only when offline.
   const isHTMLRequest =
