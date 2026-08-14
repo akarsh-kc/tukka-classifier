@@ -989,16 +989,16 @@
                 </button>
             </div>
 
-            <div class="p-3 border-t border-slate-100 bg-white flex items-end gap-2">
+            <div class="p-2.5 sm:p-3 border-t border-slate-100 bg-white flex items-end gap-1.5 sm:gap-2">
                 <input type="file" id="ai-video-input" accept="video/*" class="hidden" onchange="handleAiVideoSelect(event)">
-                <button onclick="document.getElementById('ai-video-input').click()" title="Attach a screen recording" class="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-colors">
-                    <i class="fa-solid fa-video"></i>
+                <button onclick="document.getElementById('ai-video-input').click()" title="Attach a screen recording" class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-colors">
+                    <i class="fa-solid fa-video text-sm"></i>
                 </button>
-                <button id="ai-mic-btn" onclick="toggleAiAudioRecording()" title="Speak your question (voice-to-text)" class="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-colors">
-                    <i class="fa-solid fa-microphone"></i>
+                <button id="ai-mic-btn" onclick="toggleAiAudioRecording()" title="Speak your question (voice-to-text)" class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-colors">
+                    <i class="fa-solid fa-microphone text-sm"></i>
                 </button>
-                <textarea id="ai-chat-input" rows="1" placeholder="Ask about your mistakes — e.g. 'Which folders keep costing me marks?'" class="flex-1 resize-none max-h-32 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500 font-medium" onkeydown="handleAiChatKeydown(event)"></textarea>
-                <button id="ai-send-btn" onclick="sendAiMessage()" class="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white shadow-md transition-all">
+                <textarea id="ai-chat-input" rows="1" placeholder="Ask about your mistakes…" class="flex-1 min-w-0 resize-none max-h-32 overflow-y-auto bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs leading-normal text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500 font-medium" onkeydown="handleAiChatKeydown(event)" oninput="autoGrowAiChatInput()"></textarea>
+                <button id="ai-send-btn" onclick="sendAiMessage()" class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white shadow-md transition-all">
                     <i class="fa-solid fa-paper-plane text-xs"></i>
                 </button>
             </div>
@@ -1614,14 +1614,14 @@
                 <button onclick="deleteEntryPrompt('${e.id}')" class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors" title="Delete">
                     <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
-                <p class="text-sm font-semibold text-slate-900 pr-16 leading-relaxed">${escHtml(e.question || '')}</p>
-                ${opts.length ? `<ul class="mt-2 space-y-1">${opts.map(o => `<li class="text-xs text-slate-600 pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-slate-300">${escHtml(o)}</li>`).join('')}</ul>` : ''}
+                <p class="text-sm font-semibold text-slate-900 pr-16 leading-relaxed">${escHtml(sanitizeMathText(e.question || ''))}</p>
+                ${opts.length ? `<ul class="mt-2 space-y-1">${opts.map(o => `<li class="text-xs text-slate-600 pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-slate-300">${escHtml(sanitizeMathText(o))}</li>`).join('')}</ul>` : ''}
                 <button onclick="toggleAnswerBlock('${e.id}')" id="answer-toggle-${e.id}" class="mt-2.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-semibold rounded-lg transition-colors inline-flex items-center gap-1.5">
                     <i class="fa-solid fa-eye text-[10px]"></i> Show Answer
                 </button>
                 <div id="answer-block-${e.id}" class="hidden mt-2">
-                    <p class="text-xs text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>${escHtml(e.correctAnswer || '')}</p>
-                    ${e.explanation ? `<p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">${escHtml(e.explanation)}</p>` : ''}
+                    <p class="text-xs text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>${escHtml(sanitizeMathText(e.correctAnswer || ''))}</p>
+                    ${e.explanation ? `<p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">${escHtml(sanitizeMathText(e.explanation))}</p>` : ''}
                     ${!answerMatchesOptions(e) ? `<p class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-1.5 leading-relaxed"><i class="fa-solid fa-lightbulb mr-1"></i>This one's worth a quick look — the marked answer doesn't clearly line up with the listed options.</p>` : ''}
                 </div>
                 <p class="text-[10px] text-slate-400 font-semibold mt-2.5">${dateStr}</p>
@@ -1685,6 +1685,17 @@
 
         function escHtml(str) {
             return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        // Gemini occasionally ignores the "wrap LaTeX in \(...\)" instruction and
+        // leaves a bare \text{...} command sitting in plain text (e.g. "24 \text{ cm}^3"),
+        // which MathJax never touches because it's outside math delimiters — it just
+        // shows up as broken raw text. This flattens any \text{...} that ISN'T already
+        // inside a \(...\), \[...\] or $$...$$ block down to its plain content, leaving
+        // properly-delimited LaTeX untouched for MathJax to render normally.
+        function sanitizeMathText(str) {
+            if (!str) return '';
+            const parts = String(str).split(/(\\\(.*?\\\)|\\\[.*?\\\]|\$\$.*?\$\$)/gs);
+            return parts.map((part, i) => i % 2 === 1 ? part : part.replace(/\\text\{([^{}]*)\}/g, '$1')).join('');
         }
         function escAttr(str) { return escHtml(str).replace(/`/g, '&#96;'); }
 
@@ -2306,6 +2317,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
                 }
                 aiSpeechFinalText = finalText;
                 input.value = aiSpeechBaseText + aiSpeechFinalText + interim;
+                autoGrowAiChatInput();
                 input.scrollTop = input.scrollHeight;
             };
             recognition.onerror = (event) => {
@@ -2338,6 +2350,16 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
         }
 
         function handleAiChatKeydown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(); } }
+        // The textarea is rows="1" (fixed one-line tall) with no resize handle, so
+        // long text (or the long placeholder, on narrow phones) wrapped to a 2nd line
+        // with nowhere to go and got visually clipped. Grow it with the content instead,
+        // up to max-h-32, then let it scroll internally beyond that.
+        function autoGrowAiChatInput() {
+            const el = document.getElementById('ai-chat-input');
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+        }
 
         function showAiTyping() {
             const box = document.getElementById('ai-chat-messages');
@@ -2433,6 +2455,7 @@ If a file clearly isn't from a maths mock-test review screen at all, just skip i
             if (aiPendingAttachment) { userMsg.fileInfo = aiPendingAttachment.name; userMsg.fileKind = aiPendingAttachment.kind; }
             aiChatHistory.push(userMsg);
             input.value = '';
+            autoGrowAiChatInput();
             renderAiChat();
             saveAiChatToStorage();
             const contents = aiChatHistory
