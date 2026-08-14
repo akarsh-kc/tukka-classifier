@@ -103,10 +103,18 @@
         }
         html.dark .switcher-panel { background: #0b0f20; box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 24px 60px -20px rgba(0,0,0,0.6); }
 
+        #cat-tabs {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+        }
+        @media (min-width: 560px) {
+            #cat-tabs { gap: 10px; }
+        }
         .cat-tab {
-            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px;
+            /* 3-per-row on mobile: basis accounts for 2 gaps of 8px each across the row */
+            flex: 0 0 calc((100% - 16px) / 3);
+            display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 12px 6px;
             border-radius: 1.1rem; border: 1.5px solid transparent; background: #f8fafc; cursor: pointer;
-            transition: all .2s ease; text-align: center;
+            transition: all .2s ease; text-align: center; min-width: 0;
         }
         html.dark .cat-tab { background: #131a30; }
         .cat-tab:hover { transform: translateY(-2px); }
@@ -116,13 +124,26 @@
         }
         html.dark .cat-tab.active { background: linear-gradient(160deg, color-mix(in srgb, var(--cat-a) 22%, #0b0f20), color-mix(in srgb, var(--cat-b) 14%, #0b0f20)); }
         .cat-tab .cat-icon {
-            width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 17px; background: linear-gradient(135deg, var(--cat-a), var(--cat-b));
+            width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 15px; background: linear-gradient(135deg, var(--cat-a), var(--cat-b));
             box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--cat-a) 60%, transparent);
         }
-        .cat-tab .cat-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12.5px; color: #1e293b; }
+        .cat-tab .cat-name {
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; color: #1e293b;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+        }
         html.dark .cat-tab .cat-name { color: #f1f5f9; }
-        .cat-tab .cat-sub { font-size: 10px; color: #64748b; font-weight: 500; }
+        /* Subtitle is redundant with the exam-grid description below once a category
+           is picked, and there's no room for it in a 3-across mobile grid — show it
+           only once tiles are wide enough (5-across layout, ≥560px). */
+        .cat-tab .cat-sub { display: none; font-size: 10px; color: #64748b; font-weight: 500; }
+        @media (min-width: 560px) {
+            /* 5-per-row: basis accounts for 4 gaps of 10px each across the row */
+            .cat-tab { flex-basis: calc((100% - 40px) / 5); }
+            .cat-tab .cat-icon { width: 42px; height: 42px; border-radius: 12px; font-size: 17px; }
+            .cat-tab .cat-name { font-size: 12.5px; white-space: normal; }
+            .cat-tab .cat-sub { display: block; }
+        }
 
         .exam-pill {
             position: relative; width: 100%; display: flex; align-items: flex-start; gap: 11px; padding: 11px 13px;
@@ -250,7 +271,7 @@
                 </button>
             </div>
 
-            <div id="cat-tabs" class="flex gap-2.5 mb-5"></div>
+            <div id="cat-tabs" class="mb-5"></div>
 
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2.5 px-0.5">
