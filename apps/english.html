@@ -895,7 +895,7 @@
     <section id="notes-view" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 lg:p-6">
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div class="flex items-center gap-3 min-w-0">
-                <button onclick="goHome()" class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 shadow-sm transition-all shrink-0">
+                <button onclick="notesBackClick()" class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 shadow-sm transition-all shrink-0">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
                 <div class="min-w-0">
@@ -1146,7 +1146,11 @@
             </div>
             <div class="p-5 space-y-3.5 text-xs">
                 <div>
-                    <label class="block text-slate-700 font-medium mb-1.5">Topic</label>
+                    <label class="block text-slate-700 font-medium mb-1.5">Folder</label>
+                    <select id="note-folder" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500"></select>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Topic <span class="text-slate-400 font-normal">(a short title for this note)</span></label>
                     <input id="note-topic" type="text" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500" placeholder="e.g. Present Perfect vs Past Simple">
                 </div>
                 <div>
@@ -2087,16 +2091,88 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
             const view = document.getElementById('notes-view');
             view.classList.remove('hidden');
             view.classList.add('flex-1');
+            currentNotesFolder = null;
             setActiveNav('nav-notes-btn');
             renderNotesView();
             tukkaPushScreen('notes');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+let currentNotesFolder = null; // maths-only: null = topic-folder grid, string = viewing one topic's notes
+        let notesFolderTopics = [];
+
         function renderNotesView() {
+            if (currentNotesFolder === null) {
+                renderNotesFolderGrid();
+            } else {
+                renderNotesTopicList();
+            }
+        }
+
+        function renderNotesFolderGrid() {
             const searchInput = document.getElementById('notes-search-input');
             const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
-            let list = notes.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const byFolder = {};
+            notes.forEach(n => {
+                const f = (n.folder && ALL_SUBFOLDERS.includes(n.folder)) ? n.folder : 'Uncategorized';
+                (byFolder[f] = byFolder[f] || []).push(n);
+            });
+            // Canonical order (grouped the same way the mistake dashboard is), Uncategorized last —
+            // legacy notes saved before folders existed land there instead of being lost.
+            let orderedFolders = ALL_SUBFOLDERS.filter(sf => byFolder[sf]);
+            if (byFolder['Uncategorized']) orderedFolders.push('Uncategorized');
+            if (q) orderedFolders = orderedFolders.filter(f => f.toLowerCase().includes(q));
+            notesFolderTopics = orderedFolders;
+
+            const folderCount = Object.keys(byFolder).length;
+            document.getElementById('notes-view-count').textContent = `${notes.length} saved note${notes.length === 1 ? '' : 's'} across ${folderCount} folder${folderCount === 1 ? '' : 's'}`;
+            document.getElementById('notes-empty-state').classList.toggle('hidden', orderedFolders.length > 0);
+            const wrap = document.getElementById('notes-list');
+            wrap.className = 'grid grid-cols-2 sm:grid-cols-3 gap-3';
+            wrap.innerHTML = orderedFolders.map((f, i) => {
+                const items = byFolder[f];
+                const group = f === 'Uncategorized' ? null : groupForSubfolder(f);
+                const meta = group ? ENGLISH_FOLDERS[group] : null;
+                const icon = meta ? meta.icon : 'fa-folder';
+                const colorA = meta ? meta.colorA : '#64748b';
+                const colorB = meta ? meta.colorB : '#94a3b8';
+                return `
+                <button onclick="openNotesTopic(${i})" class="glass-panel rounded-2xl p-3.5 text-left">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white mb-2" style="background:linear-gradient(135deg, ${colorA}, ${colorB})">
+                        <i class="fa-solid ${icon} text-sm"></i>
+                    </div>
+                    <p class="text-[11.5px] font-bold text-slate-900 leading-snug">${escHtml(f)}</p>
+                    <p class="text-[10px] text-slate-400 font-semibold mt-1">${items.length} note${items.length === 1 ? '' : 's'}</p>
+                </button>`;
+            }).join('');
+        }
+
+        function openNotesTopic(i) {
+            currentNotesFolder = notesFolderTopics[i];
+            const search = document.getElementById('notes-search-input');
+            if (search) search.value = '';
+            renderNotesView();
+        }
+
+        function notesBackClick() {
+            if (currentNotesFolder !== null) {
+                currentNotesFolder = null;
+                const search = document.getElementById('notes-search-input');
+                if (search) search.value = '';
+                renderNotesView();
+            } else {
+                goHome();
+            }
+        }
+
+        function renderNotesTopicList() {
+            const searchInput = document.getElementById('notes-search-input');
+            const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            let list = notes.filter(n => {
+                const f = (n.folder && ALL_SUBFOLDERS.includes(n.folder)) ? n.folder : 'Uncategorized';
+                return f === currentNotesFolder;
+            });
+            list = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             if (q) {
                 list = list.filter(n =>
                     String(n.topic || '').toLowerCase().includes(q) ||
@@ -2105,12 +2181,17 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
                     String(n.question || '').toLowerCase().includes(q)
                 );
             }
-            document.getElementById('notes-view-count').textContent = `${notes.length} saved note${notes.length === 1 ? '' : 's'}`;
+            document.getElementById('notes-view-count').textContent = `${currentNotesFolder} — ${list.length} note${list.length === 1 ? '' : 's'}`;
             document.getElementById('notes-empty-state').classList.toggle('hidden', list.length > 0);
             const wrap = document.getElementById('notes-list');
             wrap.className = 'space-y-3';
             wrap.innerHTML = list.map(n => {
-                try { return renderNoteCard(n); } catch (e) { console.error('Note render error:', e, n); return ''; }
+                try {
+                    return renderNoteCard(n);
+                } catch (e) {
+                    console.error('Note render error:', e, n);
+                    return `<div class="glass-panel rounded-2xl p-4 border border-rose-200"><p class="text-xs font-bold text-rose-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Couldn't display this note</p><p class="text-[10.5px] text-slate-400 mt-1">Its saved data looks corrupted. You can delete it below and re-add it.</p><button onclick="deleteNotePrompt('${n.id}')" class="mt-2 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-semibold rounded-lg">Delete</button></div>`;
+                }
             }).join('');
             typesetMath(wrap);
         }
@@ -2188,8 +2269,19 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
         }
 
         // ---------- Manual note entry (no Gemini) ----------
+        function populateNoteFolderSelect(selected) {
+            const sel = document.getElementById('note-folder');
+            if (!sel) return;
+            sel.innerHTML = Object.keys(ENGLISH_FOLDERS).map(group => {
+                const opts = ENGLISH_FOLDERS[group].subfolders.map(sf =>
+                    `<option value="${escAttr(sf)}" ${sf === selected ? 'selected' : ''}>${escHtml(sf)}</option>`
+                ).join('');
+                return `<optgroup label="${escAttr(group)}">${opts}</optgroup>`;
+            }).join('');
+        }
         function openManualAddNoteModal() {
             document.getElementById('note-topic').value = '';
+            populateNoteFolderSelect(ALL_SUBFOLDERS[0]);
             document.getElementById('note-formula').value = '';
             document.getElementById('note-trick').value = '';
             document.getElementById('note-table').value = '';
@@ -2203,6 +2295,8 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
         }
         function saveManualNote() {
             const topic = document.getElementById('note-topic').value.trim();
+            const folderSel = document.getElementById('note-folder');
+            const folder = folderSel ? folderSel.value : '';
             const formula = document.getElementById('note-formula').value.trim();
             const trick = document.getElementById('note-trick').value.trim();
             const table = document.getElementById('note-table').value.trim();
@@ -2213,7 +2307,7 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
             if (!formula && !trick && !table && !question) { showToast('Add at least a formula, trick, table, or question.', 'error'); return; }
             notes.push({
                 id: 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-                topic, formula, trick, table, question, options, correctAnswer,
+                topic, folder, formula, trick, table, question, options, correctAnswer,
                 createdAt: Date.now(),
                 source: 'manual'
             });
@@ -2249,11 +2343,13 @@ If a file clearly isn't from an English mock-test review screen at all, just ski
 
         // ---------- Gemini prompt + classify flow for Notes mode ----------
         function notesInstruction() {
+            const folderList = ALL_SUBFOLDERS.map(f => `"${f}"`).join(', ');
             return `You are looking at screenshot(s) or a video the user saved as a ENGLISH GRAMMAR / VOCABULARY REFERENCE NOTE — not a scored mistake. It may show a formula/rule sheet, a worked trick or shortcut, a definition, a reference table, or a full question together with its solution.
 
 For each distinct topic/note shown across the files, return an object with:
-- "topic": a short topic name (e.g. "Time & Work — Efficiency Trick").
-- "formula": the core grammar rule, pattern, or usage note(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
+- "folder": classify this note into exactly one of these topic folders (use the string verbatim): ${folderList}
+- "topic": a short specific title for this note (e.g. "Time & Work — Efficiency Trick"). This is a label, not a folder name — pick whichever exact folder from the list above it fits best, even if no folder name matches perfectly.
+- "formula": the core grammar rule, pattern, or usage note(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \\n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
 - "trick": a short, clear write-up (2-5 sentences, plain text) of the trick, method, or explanation shown — why it works or when to use it. Leave "" if there's nothing beyond the formula/rule itself.
 - "table": if the image contains a genuine table (a reference sheet, a comparison of cases, a chart), reproduce it as a markdown pipe table: header row, then a |---|---| separator row, then one data row per line. Leave "" if there's no real table — do not invent one.
 - "question": the full original question text, ONLY if a specific question is shown alongside the formula/trick. Leave "" if it's just a standalone formula/trick/reference sheet with no question.
@@ -2262,7 +2358,7 @@ For each distinct topic/note shown across the files, return an object with:
 
 IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command (anything starting with a backslash, like \\\\text{}, \\\\sqrt{}, \\\\frac{}) outside of \\\\(...\\\\) or $$...$$ delimiters. For simple values with no real math notation, just write plain text instead of reaching for \\\\text{}.
 
-Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
 
 If a file clearly isn't an English grammar/vocab reference at all, just skip it. If NONE of the files show anything usable, reply with exactly: []`;
         }
@@ -2341,10 +2437,13 @@ If a file clearly isn't an English grammar/vocab reference at all, just skip it.
                     const trick = (item.trick || '').toString().trim();
                     const table = (item.table || '').toString().trim();
                     const question = (item.question || '').toString().trim();
+                    const rawFolder = (item.folder || '').toString().trim();
+                    const folder = ALL_SUBFOLDERS.includes(rawFolder) ? rawFolder : '';
                     if (!topic && !formula && !trick && !table && !question) return;
                     notes.push({
                         id: 'note-' + now + '-' + i + '-' + Math.random().toString(36).slice(2, 7),
                         topic: topic || 'Untitled Note',
+                        folder,
                         formula, trick, table, question,
                         options: Array.isArray(item.options) ? item.options.filter(Boolean) : [],
                         correctAnswer: (item.correctAnswer || '').toString().trim(),
