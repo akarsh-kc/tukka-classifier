@@ -711,6 +711,11 @@
                 <i class="fa-solid fa-toggle-on hidden lg:block absolute right-[0.65rem] top-1/2 -translate-y-1/2 text-amber-500 text-xs" title="Switch between English / Maths / GK"></i>
             </button>
 
+            <button onclick="showNotesView()" id="nav-notes-btn" class="nav-pill" style="--pill-a:#d97706;--pill-b:#fbbf24;--pill-glow:rgba(217,119,6,.55)" title="Notes — formulas, tricks & saved reference">
+                <span class="nav-icon-wrap"><i class="fa-solid fa-book-bookmark"></i></span><span class="hidden lg:inline truncate">Notes</span>
+                <span class="nav-active-dot hidden lg:block"></span>
+            </button>
+
             <div class="nav-divider"></div>
 
             <button onclick="openAddMistakeChoiceModal()" class="nav-cta w-full px-3 py-2.5 text-white text-xs font-semibold rounded-xl transition-all duration-400 flex items-center justify-center lg:justify-start gap-3" title="Add a New Mistake">
@@ -926,6 +931,38 @@
         </div>
     </section>
 
+    <!-- NOTES VIEW — formulas, tricks & reference notes, kept separate from mistakes -->
+    <section id="notes-view" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 lg:p-6">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <button onclick="goHome()" class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 shadow-sm transition-all shrink-0">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="min-w-0">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-amber-600"></i> Notes
+                    </h2>
+                    <p id="notes-view-count" class="text-xs text-slate-500 font-medium">Formulas, tricks & saved reference notes</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openManualAddNoteModal()" class="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-colors shrink-0">
+                    <i class="fa-solid fa-pen text-[10px]"></i> Add Manually
+                </button>
+                <button onclick="openAddMistakeModalForNotes()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-colors shrink-0">
+                    <i class="fa-solid fa-camera-retro text-[10px]"></i> Add via Photo
+                </button>
+            </div>
+        </div>
+        <input id="notes-search-input" type="text" oninput="renderNotesView()" placeholder="Search notes by topic…" class="w-full mb-4 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:outline-none focus:border-brand-500">
+        <div id="notes-list" class="space-y-3">
+            <!-- populated by JS: renderNotesView() -->
+        </div>
+        <div id="notes-empty-state" class="hidden glass-panel rounded-2xl p-8 text-center">
+            <p class="text-xs text-slate-500">No notes yet — save a formula, trick, or reference and it'll show up here.</p>
+        </div>
+    </section>
+
     <!-- AI ANALYZER VIEW — chat with Gemini about logged mistakes, using your own API key -->
     <section id="ai-analyzer-view" class="hidden flex-1 max-w-5xl w-full mx-auto p-4 lg:p-6 flex flex-col">
         <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -1136,21 +1173,83 @@
         </div>
     </div>
 
+    <!-- MANUAL ADD NOTE MODAL — add a formula/trick/reference note by hand, no Gemini needed -->
+    <div id="manualAddNoteModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 bg-white rounded-2xl max-w-md w-full shadow-2xl my-auto max-h-[88vh] overflow-y-auto">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-10">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-book-bookmark text-amber-600"></i> Add Note
+                </h3>
+                <button onclick="closeManualAddNoteModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3.5 text-xs">
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Topic</label>
+                    <input id="note-topic" type="text" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500" placeholder="e.g. Fundamental Rights — Article List">
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Key Fact / Formula <span class="text-slate-400 font-normal">(one per line)</span></label>
+                    <textarea id="note-formula" rows="3" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono-tech focus:outline-none focus:border-brand-500" placeholder="e.g. Article 19: 6 freedoms
+Article 21: Right to Life"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Trick / Note <span class="text-slate-400 font-normal">(optional)</span></label>
+                    <textarea id="note-trick" rows="3" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500" placeholder="How to remember the order, or a common confusion to avoid."></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Table <span class="text-slate-400 font-normal">(optional — one row per line: a | b | c)</span></label>
+                    <textarea id="note-table" rows="3" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono-tech focus:outline-none focus:border-brand-500" placeholder="Case | Result&#10;A | X&#10;B | Y"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Question <span class="text-slate-400 font-normal">(optional)</span></label>
+                    <textarea id="note-question" rows="2" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500" placeholder="Full question text, if this note is tied to one"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Options <span class="text-slate-400 font-normal">(one per line, optional)</span></label>
+                    <textarea id="note-options" rows="2" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500" placeholder="A) ...&#10;B) ...&#10;C) ...&#10;D) ..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1.5">Correct Answer / YR <span class="text-slate-400 font-normal">(optional)</span></label>
+                    <input id="note-answer" type="text" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-brand-500" placeholder="e.g. Option B">
+                </div>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex items-center justify-end gap-3 sticky bottom-0">
+                <button onclick="closeManualAddNoteModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-xs transition-colors">
+                    Cancel
+                </button>
+                <button onclick="saveManualNote()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold rounded-lg text-xs shadow-md transition-all">
+                    Save Note
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ADD MISTAKES MODAL — upload screenshots/videos, Gemini classifies + files them -->
     <div id="addMistakeModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="glass-panel border border-slate-200 bg-white rounded-2xl max-w-md w-full shadow-2xl my-auto">
             <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-camera-retro text-violet-600"></i> Add Screenshots / Videos
+                    <i class="fa-solid fa-camera-retro text-violet-600"></i> <span id="add-mistake-title-text">Add Screenshots / Videos</span>
                 </h3>
                 <button onclick="closeAddMistakeModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
             <div class="p-5 space-y-4 text-xs">
+                <div class="flex items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div class="pr-2 min-w-0">
+                        <p class="text-[12px] font-bold text-amber-800">Add to Notes</p>
+                        <p class="text-[10.5px] text-amber-700 mt-0.5 leading-snug">Save a key fact or formula — not a scored mistake.</p>
+                    </div>
+                    <button type="button" id="add-mistake-notes-toggle" onclick="toggleNotesUploadMode()" role="switch" aria-checked="false" class="shrink-0 relative w-11 h-6 rounded-full bg-slate-300 transition-colors">
+                        <span id="add-mistake-notes-toggle-knob" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                    </button>
+                </div>
                 <div class="p-3 bg-violet-50 border border-violet-200 rounded-xl text-violet-800 leading-relaxed">
                     <p class="font-semibold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> What to upload</p>
-                    <p>Upload screenshots or a short screen recording of the questions you got wrong in your mock (Geography, History, Polity, Science, Static GK, etc.). 2–3 screenshots at a time work best; Gemini sorts each question into the right subject folder automatically.</p>
+                    <p id="add-mistake-info-text">Upload screenshots or a short screen recording of the questions you got wrong in your mock (Geography, History, Polity, Science, Static GK, etc.). 2–3 screenshots at a time work best; Gemini sorts each question into the right subject folder automatically.</p>
                 </div>
                 <div>
                     <label class="block text-slate-700 font-medium mb-1.5">Mistake screenshots or video</label>
@@ -1555,6 +1654,7 @@
             document.getElementById('about-view').classList.add('hidden');
             document.getElementById('backup-view').classList.add('hidden');
             document.getElementById('ai-analyzer-view').classList.add('hidden');
+            document.getElementById('notes-view').classList.add('hidden');
             document.getElementById('history-view').classList.add('hidden');
             document.getElementById('group-view').classList.add('hidden');
             document.getElementById('entries-view').classList.remove('hidden');
@@ -1807,7 +1907,7 @@
             showToast('Entry added.', 'success');
         }
 
-        function openAddMistakeModal() {
+        function openAddMistakeModal(startInNotesMode) {
             addMistakeSelectedFiles = [];
             const fileInput = document.getElementById('add-mistake-input');
             if (fileInput) fileInput.value = '';
@@ -1817,6 +1917,8 @@
             if (btn) { btn.disabled = true; btn.textContent = 'Classify & Save'; }
             const statusEl = document.getElementById('add-mistake-status');
             if (statusEl) { statusEl.classList.add('hidden'); statusEl.innerHTML = ''; }
+            addMistakeNotesMode = !!startInNotesMode;
+            syncNotesToggleUI();
             document.getElementById('addMistakeModal').classList.remove('hidden');
         }
         function closeAddMistakeModal() {
@@ -1879,6 +1981,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
         }
 
         async function classifyMistakeFiles() {
+            if (addMistakeNotesMode) { await classifyNotesFiles(); return; }
             const key = getGeminiKey();
             if (!key) {
                 closeAddMistakeModal();
@@ -1991,6 +2094,303 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
             }
         }
 
+
+        // ================= NOTES (formulas, tricks & reference material — separate from mistakes) =================
+        let notes = [];
+        let addMistakeNotesMode = false; // toggled inside the Add Mistake modal
+        const MISTAKE_UPLOAD_INFO_TEXT = document.getElementById('add-mistake-info-text') ? document.getElementById('add-mistake-info-text').textContent : '';
+        const NOTES_UPLOAD_INFO_TEXT = 'Upload a screenshot of a fact sheet, timeline, list, or formula (a Static GK table, a Polity list, a Science formula, etc.) you want saved as a note. Gemini pulls out the topic, the core fact/formula, and a short note.';
+
+        function getNotesStorageKey() { return THIS_APP_PREFIX + '_notes__' + ENGLISH_EXAM_ID; }
+        function loadNotes() {
+            try {
+                const raw = localStorage.getItem(getNotesStorageKey());
+                notes = raw ? JSON.parse(raw) : [];
+            } catch (e) { notes = []; }
+        }
+        function saveNotes() {
+            try { localStorage.setItem(getNotesStorageKey(), JSON.stringify(notes)); } catch (e) {}
+        }
+
+        function showNotesView() {
+            document.getElementById('dashboard-main').classList.add('hidden');
+            document.getElementById('group-view').classList.add('hidden');
+            document.getElementById('entries-view').classList.add('hidden');
+            document.getElementById('history-view').classList.add('hidden');
+            document.getElementById('about-view').classList.add('hidden');
+            document.getElementById('backup-view').classList.add('hidden');
+            const aiView = document.getElementById('ai-analyzer-view');
+            if (aiView) aiView.classList.add('hidden');
+            const view = document.getElementById('notes-view');
+            view.classList.remove('hidden');
+            view.classList.add('flex-1');
+            setActiveNav('nav-notes-btn');
+            renderNotesView();
+            tukkaPushScreen('notes');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderNotesView() {
+            const searchInput = document.getElementById('notes-search-input');
+            const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            let list = notes.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            if (q) {
+                list = list.filter(n =>
+                    (n.topic || '').toLowerCase().includes(q) ||
+                    (n.trick || '').toLowerCase().includes(q) ||
+                    (n.formula || '').toLowerCase().includes(q) ||
+                    (n.question || '').toLowerCase().includes(q)
+                );
+            }
+            document.getElementById('notes-view-count').textContent = `${notes.length} saved note${notes.length === 1 ? '' : 's'}`;
+            document.getElementById('notes-empty-state').classList.toggle('hidden', list.length > 0);
+            const wrap = document.getElementById('notes-list');
+            wrap.innerHTML = list.map(renderNoteCard).join('');
+            typesetMath(wrap);
+        }
+
+        function renderNoteCard(n) {
+            const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            const opts = (n.options || []).filter(Boolean);
+            return `
+            <div class="glass-panel rounded-2xl p-4 relative">
+                <button onclick="deleteNotePrompt('${n.id}')" class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors" title="Delete">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+                <span class="inline-block text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-100 rounded px-1.5 py-0.5 mb-2 pr-8">${escHtml(n.topic || 'Note')}</span>
+                ${n.formula ? `<div class="mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">${renderMultilineBlock(n.formula)}</div>` : ''}
+                ${n.table ? `<div class="mt-2 overflow-x-auto">${renderMarkdownTable(n.table)}</div>` : ''}
+                ${n.trick ? `<div class="mt-2 text-xs text-slate-600 leading-relaxed space-y-1">${renderMultilineBlock(n.trick)}</div>` : ''}
+                ${n.question ? `
+                <div class="mt-3 pt-3 border-t border-slate-100">
+                    <p class="text-xs font-semibold text-slate-900 leading-relaxed">${escHtml(sanitizeMathText(n.question))}</p>
+                    ${opts.length ? `<ul class="mt-2 space-y-1">${opts.map(o => `<li class="text-[11px] text-slate-600 pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-slate-300">${escHtml(sanitizeMathText(o))}</li>`).join('')}</ul>` : ''}
+                    ${n.correctAnswer ? `<p class="text-[11px] text-emerald-700 font-semibold mt-1.5"><i class="fa-solid fa-circle-check mr-1"></i>${escHtml(sanitizeMathText(n.correctAnswer))}</p>` : ''}
+                </div>` : ''}
+                <p class="text-[10px] text-slate-400 font-semibold mt-2.5">${dateStr}${n.source === 'manual' ? ' · added manually' : ''}</p>
+            </div>`;
+        }
+
+        function deleteNotePrompt(id) {
+            showConfirmModal('Delete this note?', 'This removes it permanently. This cannot be undone.', () => {
+                notes = notes.filter(n => n.id !== id);
+                saveNotes();
+                renderNotesView();
+                showToast('Note deleted.', 'success');
+            });
+        }
+
+        // Renders free text where each non-empty line becomes its own block, so
+        // multiple formulas/steps never get squeezed onto one line — LaTeX inside
+        // is left alone for MathJax to typeset afterward.
+        function renderMultilineBlock(text) {
+            if (!text) return '';
+            const lines = String(text).split(/\n+/).map(l => l.trim()).filter(Boolean);
+            if (!lines.length) return '';
+            return lines.map(l => `<p class="leading-relaxed">${escHtml(sanitizeMathText(l))}</p>`).join('');
+        }
+
+        // Renders a markdown-style pipe table ("| a | b |\n|---|---|\n| 1 | 2 |") as
+        // a real HTML table instead of one flattened line — falls back to a plain
+        // multiline block if the text doesn't actually look like a table.
+        function renderMarkdownTable(text) {
+            if (!text) return '';
+            const rows = String(text).split('\n').map(r => r.trim()).filter(Boolean).filter(r => r.includes('|'));
+            if (rows.length < 2) return renderMultilineBlock(text);
+            const cellsOf = r => r.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+            const header = cellsOf(rows[0]);
+            const isSep = /^:?-+:?$/;
+            const bodyRows = rows.slice(1).filter(r => !cellsOf(r).every(c => isSep.test(c)));
+            return `<table class="w-full text-[11px] border-collapse">
+                <thead><tr>${header.map(h => `<th class="text-left font-bold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-1.5">${escHtml(sanitizeMathText(h))}</th>`).join('')}</tr></thead>
+                <tbody>${bodyRows.map(r => `<tr>${cellsOf(r).map(c => `<td class="text-slate-600 border border-slate-200 px-2 py-1.5 align-top">${escHtml(sanitizeMathText(c))}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>`;
+        }
+
+        // ---------- Manual note entry (no Gemini) ----------
+        function openManualAddNoteModal() {
+            document.getElementById('note-topic').value = '';
+            document.getElementById('note-formula').value = '';
+            document.getElementById('note-trick').value = '';
+            document.getElementById('note-table').value = '';
+            document.getElementById('note-question').value = '';
+            document.getElementById('note-options').value = '';
+            document.getElementById('note-answer').value = '';
+            document.getElementById('manualAddNoteModal').classList.remove('hidden');
+        }
+        function closeManualAddNoteModal() {
+            document.getElementById('manualAddNoteModal').classList.add('hidden');
+        }
+        function saveManualNote() {
+            const topic = document.getElementById('note-topic').value.trim();
+            const formula = document.getElementById('note-formula').value.trim();
+            const trick = document.getElementById('note-trick').value.trim();
+            const table = document.getElementById('note-table').value.trim();
+            const question = document.getElementById('note-question').value.trim();
+            const options = document.getElementById('note-options').value.split('\n').map(s => s.trim()).filter(Boolean);
+            const correctAnswer = document.getElementById('note-answer').value.trim();
+            if (!topic) { showToast('Please enter a topic name.', 'error'); return; }
+            if (!formula && !trick && !table && !question) { showToast('Add at least a formula, trick, table, or question.', 'error'); return; }
+            notes.push({
+                id: 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+                topic, formula, trick, table, question, options, correctAnswer,
+                createdAt: Date.now(),
+                source: 'manual'
+            });
+            saveNotes();
+            renderNotesView();
+            closeManualAddNoteModal();
+            showToast('Note added.', 'success');
+        }
+
+        // ---------- "Add to Notes" toggle inside the Add Mistake / Screenshots modal ----------
+        function syncNotesToggleUI() {
+            const toggle = document.getElementById('add-mistake-notes-toggle');
+            const knob = document.getElementById('add-mistake-notes-toggle-knob');
+            if (!toggle || !knob) return;
+            toggle.setAttribute('aria-checked', addMistakeNotesMode ? 'true' : 'false');
+            toggle.classList.toggle('bg-amber-500', addMistakeNotesMode);
+            toggle.classList.toggle('bg-slate-300', !addMistakeNotesMode);
+            knob.classList.toggle('translate-x-5', addMistakeNotesMode);
+            const titleEl = document.getElementById('add-mistake-title-text');
+            if (titleEl) titleEl.textContent = addMistakeNotesMode ? 'Add to Notes' : 'Add Screenshots / Videos';
+            const infoEl = document.getElementById('add-mistake-info-text');
+            if (infoEl) infoEl.textContent = addMistakeNotesMode ? NOTES_UPLOAD_INFO_TEXT : MISTAKE_UPLOAD_INFO_TEXT;
+            const btn = document.getElementById('btn-add-mistake-classify');
+            if (btn && btn.disabled) btn.textContent = addMistakeNotesMode ? 'Save to Notes' : 'Classify & Save';
+        }
+        function toggleNotesUploadMode() {
+            addMistakeNotesMode = !addMistakeNotesMode;
+            syncNotesToggleUI();
+        }
+        function openAddMistakeModalForNotes() {
+            openAddMistakeModal(true);
+        }
+
+        // ---------- Gemini prompt + classify flow for Notes mode ----------
+        function notesInstruction() {
+            return `You are looking at screenshot(s) or a video the user saved as a GENERAL KNOWLEDGE REFERENCE NOTE — not a scored mistake. It may show a formula/rule sheet, a worked trick or shortcut, a definition, a reference table, or a full question together with its solution.
+
+For each distinct topic/note shown across the files, return an object with:
+- "topic": a short topic name (e.g. "Time & Work — Efficiency Trick").
+- "formula": the core key fact, date, or formula(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
+- "trick": a short, clear write-up (2-5 sentences, plain text) of the trick, method, or explanation shown — why it works or when to use it. Leave "" if there's nothing beyond the formula/rule itself.
+- "table": if the image contains a genuine table (a reference sheet, a comparison of cases, a chart), reproduce it as a markdown pipe table: header row, then a |---|---| separator row, then one data row per line. Leave "" if there's no real table — do not invent one.
+- "question": the full original question text, ONLY if a specific question is shown alongside the formula/trick. Leave "" if it's just a standalone formula/trick/reference sheet with no question.
+- "options": array of option strings if it's an MCQ. Leave [] if none.
+- "correctAnswer": the correct answer/option, if shown or clearly determinable. Leave "" if not present.
+
+IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command (anything starting with a backslash, like \\\\text{}, \\\\sqrt{}, \\\\frac{}) outside of \\\\(...\\\\) or $$...$$ delimiters. For simple values with no real math notation, just write plain text instead of reaching for \\\\text{}.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
+
+If a file clearly isn't a GK reference/fact sheet at all, just skip it. If NONE of the files show anything usable, reply with exactly: []`;
+        }
+
+        async function classifyNotesFiles() {
+            const key = getGeminiKey();
+            if (!key) {
+                closeAddMistakeModal();
+                openAiKeyModal();
+                showToast('Add your Gemini API key first, then try adding notes again.', 'info');
+                return;
+            }
+            if (!addMistakeSelectedFiles.length) return;
+
+            const btn = document.getElementById('btn-add-mistake-classify');
+            const statusEl = document.getElementById('add-mistake-status');
+            btn.disabled = true;
+            btn.textContent = 'Reading…';
+            statusEl.classList.remove('hidden');
+            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Reading ${addMistakeSelectedFiles.length} file${addMistakeSelectedFiles.length > 1 ? 's' : ''}…`;
+
+            try {
+                const mediaParts = [];
+                for (const file of addMistakeSelectedFiles) {
+                    const isVideo = (file.type || '').startsWith('video/');
+                    if (isVideo) {
+                        statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading ${file.name} to Gemini…`;
+                        const fileMeta = await geminiUploadFile(
+                            file, file.name, file.type || 'video/mp4',
+                            (phase) => {
+                                statusEl.innerHTML = phase === 'processing'
+                                    ? `<i class="fa-solid fa-spinner fa-spin"></i> Gemini is processing ${file.name}…`
+                                    : `<i class="fa-solid fa-spinner fa-spin"></i> Uploading ${file.name} to Gemini…`;
+                            }
+                        );
+                        mediaParts.push({ fileData: { fileUri: fileMeta.uri, mimeType: fileMeta.mimeType } });
+                    } else {
+                        mediaParts.push({ inlineData: { mimeType: file.type || 'image/jpeg', data: await fileToBase64(file) } });
+                    }
+                }
+
+                statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Pulling out the formula & trick…';
+
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: 'user', parts: [{ text: notesInstruction() }, ...mediaParts] }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    const msg = (data && data.error && data.error.message) || `Request failed (${res.status})`;
+                    throw new Error(msg);
+                }
+                const candidate = data.candidates && data.candidates[0];
+                const replyText = candidate && candidate.content && candidate.content.parts
+                    ? candidate.content.parts.map(p => p.text || '').join('')
+                    : '';
+                const cleaned = replyText.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+
+                let parsed;
+                try {
+                    parsed = JSON.parse(cleaned);
+                } catch (e) {
+                    throw new Error("Gemini's reply wasn't valid data — try a clearer screenshot.");
+                }
+                if (!Array.isArray(parsed)) throw new Error("Gemini's reply wasn't in the expected format — please try again.");
+
+                const now = Date.now();
+                let added = 0;
+                parsed.forEach((item, i) => {
+                    if (!item) return;
+                    const topic = (item.topic || '').toString().trim();
+                    const formula = (item.formula || '').toString().trim();
+                    const trick = (item.trick || '').toString().trim();
+                    const table = (item.table || '').toString().trim();
+                    const question = (item.question || '').toString().trim();
+                    if (!topic && !formula && !trick && !table && !question) return;
+                    notes.push({
+                        id: 'note-' + now + '-' + i + '-' + Math.random().toString(36).slice(2, 7),
+                        topic: topic || 'Untitled Note',
+                        formula, trick, table, question,
+                        options: Array.isArray(item.options) ? item.options.filter(Boolean) : [],
+                        correctAnswer: (item.correctAnswer || '').toString().trim(),
+                        createdAt: now,
+                        source: 'ai'
+                    });
+                    added++;
+                });
+
+                if (added === 0) {
+                    throw new Error("Couldn't find a formula, trick, or reference note in what you uploaded — try a clearer screenshot.");
+                }
+
+                saveNotes();
+                closeAddMistakeModal();
+                const notesView = document.getElementById('notes-view');
+                if (notesView && !notesView.classList.contains('hidden')) renderNotesView();
+                showToast(`Added ${added} note${added > 1 ? 's' : ''} to Notes.`, 'success');
+            } catch (err) {
+                console.error('Classify notes error:', err);
+                statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ${String(err.message || 'Something went wrong.').replace(/</g, '&lt;')}`;
+                btn.disabled = false;
+                btn.textContent = 'Save to Notes';
+            }
+        }
+
         // ================= GEMINI API KEY (shared 'tukka_gemini_api_key' across all Tukka Classifier apps) =================
         const AI_MODEL = 'gemini-flash-lite-latest';
         const AI_KEY_STORAGE = 'tukka_gemini_api_key';
@@ -2096,6 +2496,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
         }
         function hideAiAnalyzerView() {
             document.getElementById('ai-analyzer-view').classList.add('hidden');
+            document.getElementById('notes-view').classList.add('hidden');
             document.getElementById('dashboard-main').classList.remove('hidden');
             setActiveNav('nav-home-btn');
             tukkaReplaceScreen('home');
@@ -2556,6 +2957,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
             document.getElementById('about-view').classList.add('hidden');
             document.getElementById('backup-view').classList.add('hidden');
             document.getElementById('ai-analyzer-view').classList.add('hidden');
+            document.getElementById('notes-view').classList.add('hidden');
             document.getElementById('dashboard-main').classList.remove('hidden');
             renderFolderCards();
             setActiveNav('nav-home-btn');
@@ -2570,6 +2972,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
             document.getElementById('history-view').classList.add('hidden');
             document.getElementById('backup-view').classList.add('hidden');
             document.getElementById('ai-analyzer-view').classList.add('hidden');
+            document.getElementById('notes-view').classList.add('hidden');
             const view = document.getElementById('about-view');
             view.classList.remove('hidden');
             view.classList.add('flex-1');
@@ -2600,6 +3003,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
         function hideBackupView() {
             document.getElementById('backup-view').classList.add('hidden');
             document.getElementById('ai-analyzer-view').classList.add('hidden');
+            document.getElementById('notes-view').classList.add('hidden');
             document.getElementById('dashboard-main').classList.remove('hidden');
             setActiveNav('nav-home-btn');
             tukkaReplaceScreen('home');
@@ -2614,6 +3018,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
             document.getElementById('about-view').classList.add('hidden');
             document.getElementById('backup-view').classList.add('hidden');
             document.getElementById('ai-analyzer-view').classList.add('hidden');
+            document.getElementById('notes-view').classList.add('hidden');
             const view = document.getElementById('history-view');
             view.classList.remove('hidden');
             view.classList.add('flex-1');
@@ -3175,6 +3580,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
                     case 'about': showAboutView(); break;
                     case 'backup': showBackupView(); break;
                     case 'ai': showAiAnalyzerView(); break;
+                    case 'notes': showNotesView(); break;
                     default: goHome();
                 }
             } finally { tukkaSuppressPush = false; }
@@ -3191,6 +3597,7 @@ If a file clearly isn't from a GK mock-test review screen at all, just skip it. 
         window.addEventListener('DOMContentLoaded', async () => {
             try { history.replaceState({ tukkaScreen: 'home' }, '', location.href); } catch (e) {}
             loadEntries();
+            loadNotes();
             applyDarkModeIcon();
             if (window.parent && window.parent !== window) {
                 try { window.parent.postMessage({ type: 'tukka:darkModeChanged', dark: isDarkMode() }, '*'); } catch (e) {}
