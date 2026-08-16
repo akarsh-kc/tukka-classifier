@@ -67,8 +67,17 @@
 
         <div id="preview-state" class="card p-4 hidden space-y-4">
             <div id="thumb-grid" class="grid grid-cols-3 gap-2"></div>
+            <div class="flex items-center justify-between gap-3 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl">
+                <div class="pr-2 min-w-0">
+                    <p class="text-[12px] font-bold text-amber-800 dark:text-amber-300">Add to Notes instead</p>
+                    <p class="text-[10.5px] text-amber-700 dark:text-amber-400 mt-0.5 leading-snug">Save a formula/rule/trick — not a scored mistake.</p>
+                </div>
+                <button type="button" id="share-notes-toggle" onclick="toggleShareNotesMode()" role="switch" aria-checked="false" class="shrink-0 relative w-11 h-6 rounded-full bg-slate-300 dark:bg-white/10 transition-colors">
+                    <span id="share-notes-toggle-knob" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                </button>
+            </div>
             <button id="sort-btn" onclick="startClassification()" class="w-full px-4 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-semibold rounded-xl shadow-md flex items-center justify-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Sort into folders
+                <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="sort-btn-text">Sort into folders</span>
             </button>
         </div>
 
@@ -162,15 +171,23 @@
         async function pushSubjectToCloud(subjectKey) {
             if (!isDriveConnected() || !getCachedDriveToken()) return; // silently skip — no interactive prompt from this page
             const s = SUBJECTS[subjectKey];
-            const marker = s.prefix + '_entries__';
+            const entriesMarker = s.prefix + '_entries__';
+            const notesMarker = s.prefix + '_notes__';
             const exams = {};
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (!key || key.indexOf(marker) !== 0) continue;
-                const examId = key.slice(marker.length);
-                let list = [];
-                try { list = JSON.parse(localStorage.getItem(key)) || []; } catch (e) {}
-                if (Array.isArray(list) && list.length) exams[examId] = { entries: list };
+                if (!key) continue;
+                if (key.indexOf(entriesMarker) === 0) {
+                    const examId = key.slice(entriesMarker.length);
+                    let list = [];
+                    try { list = JSON.parse(localStorage.getItem(key)) || []; } catch (e) {}
+                    if (Array.isArray(list) && list.length) { exams[examId] = exams[examId] || {}; exams[examId].entries = list; }
+                } else if (key.indexOf(notesMarker) === 0) {
+                    const examId = key.slice(notesMarker.length);
+                    let list = [];
+                    try { list = JSON.parse(localStorage.getItem(key)) || []; } catch (e) {}
+                    if (Array.isArray(list) && list.length) { exams[examId] = exams[examId] || {}; exams[examId].notes = list; }
+                }
             }
             if (!Object.keys(exams).length) return;
             const ownData = { [s.prefix]: { categoryName: CATEGORY_NAMES[s.prefix], exams } };
@@ -321,6 +338,81 @@ Reply with ONLY a raw JSON array of these objects — no markdown code fences, n
             s.typeFor = (sf) => { const g = s.groupFor(sf); return g ? s.folders[g].type : 'qa'; };
         }
 
+        // ---- Notes-mode prompts — identical wording to what each subject app's own
+        // "Add to Notes" toggle sends to Gemini, so a formula/trick/reference note
+        // shared straight from Gallery ends up shaped exactly like one added in-app. ----
+        const NOTES_PROMPTS = {
+            english: (folderList) => `You are looking at screenshot(s) or a video the user saved as a ENGLISH GRAMMAR / VOCABULARY REFERENCE NOTE — not a scored mistake. It may show a formula/rule sheet, a worked trick or shortcut, a definition, a reference table, or a full question together with its solution.
+
+For each distinct topic/note shown across the files, return an object with:
+- "folder": classify this note into exactly one of these topic folders (use the string verbatim): ${folderList}
+- "topic": a short specific title for this note (e.g. "Time & Work — Efficiency Trick"). This is a label, not a folder name — pick whichever exact folder from the list above it fits best, even if no folder name matches perfectly.
+- "formula": the core grammar rule, pattern, or usage note(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \\n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
+- "trick": a short, clear write-up (2-5 sentences, plain text) of the trick, method, or explanation shown — why it works or when to use it. Leave "" if there's nothing beyond the formula/rule itself.
+- "table": if the image contains a genuine table (a reference sheet, a comparison of cases, a chart), reproduce it as a markdown pipe table: header row, then a |---|---| separator row, then one data row per line. Leave "" if there's no real table — do not invent one.
+- "question": the full original question text, ONLY if a specific question is shown alongside the formula/trick. Leave "" if it's just a standalone formula/trick/reference sheet with no question.
+- "options": array of option strings if it's an MCQ. Leave [] if none.
+- "correctAnswer": the correct answer/option, if shown or clearly determinable. Leave "" if not present.
+
+IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command (anything starting with a backslash, like \\\\text{}, \\\\sqrt{}, \\\\frac{}) outside of \\\\(...\\\\) or $$...$$ delimiters. For simple values with no real math notation, just write plain text instead of reaching for \\\\text{}.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
+
+If a file clearly isn't an English grammar/vocab reference at all, just skip it. If NONE of the files show anything usable, reply with exactly: []`,
+            gk: (folderList) => `You are looking at screenshot(s) or a video the user saved as a GENERAL KNOWLEDGE REFERENCE NOTE — not a scored mistake. It may show a formula/rule sheet, a worked trick or shortcut, a definition, a reference table, or a full question together with its solution.
+
+For each distinct topic/note shown across the files, return an object with:
+- "folder": classify this note into exactly one of these topic folders (use the string verbatim): ${folderList}
+- "topic": a short specific title for this note (e.g. "Time & Work — Efficiency Trick"). This is a label, not a folder name — pick whichever exact folder from the list above it fits best, even if no folder name matches perfectly.
+- "formula": the core key fact, date, or formula(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \\n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
+- "trick": a short, clear write-up (2-5 sentences, plain text) of the trick, method, or explanation shown — why it works or when to use it. Leave "" if there's nothing beyond the formula/rule itself.
+- "table": if the image contains a genuine table (a reference sheet, a comparison of cases, a chart), reproduce it as a markdown pipe table: header row, then a |---|---| separator row, then one data row per line. Leave "" if there's no real table — do not invent one.
+- "question": the full original question text, ONLY if a specific question is shown alongside the formula/trick. Leave "" if it's just a standalone formula/trick/reference sheet with no question.
+- "options": array of option strings if it's an MCQ. Leave [] if none.
+- "correctAnswer": the correct answer/option, if shown or clearly determinable. Leave "" if not present.
+
+IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command (anything starting with a backslash, like \\\\text{}, \\\\sqrt{}, \\\\frac{}) outside of \\\\(...\\\\) or $$...$$ delimiters. For simple values with no real math notation, just write plain text instead of reaching for \\\\text{}.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
+
+If a file clearly isn't a GK reference/fact sheet at all, just skip it. If NONE of the files show anything usable, reply with exactly: []`,
+            maths: (folderList) => `You are looking at screenshot(s) or a video the user saved as a MATHS REFERENCE NOTE — not a scored mistake. It may show a formula/rule sheet, a worked trick or shortcut, a definition, a reference table, or a full question together with its solution.
+
+For each distinct topic/note shown across the files, return an object with:
+- "folder": classify this note into exactly one of these topic folders (use the string verbatim): ${folderList}
+- "topic": a short specific title for this note (e.g. "Reciprocal Sum Cube Shortcut"). This is a label, not a folder name — pick whichever exact folder from the list above it fits best, even if no folder name matches perfectly.
+- "formula": the core formula, equation, or trick(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \\n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
+- "trick": a short, clear write-up (2-5 sentences, plain text) of the trick, method, or explanation shown — why it works or when to use it. Leave "" if there's nothing beyond the formula/rule itself.
+- "table": if the image contains a genuine table (a reference sheet, a comparison of cases, a chart), reproduce it as a markdown pipe table: header row, then a |---|---| separator row, then one data row per line. Leave "" if there's no real table — do not invent one.
+- "question": the full original question text, ONLY if a specific question is shown alongside the formula/trick. Leave "" if it's just a standalone formula/trick/reference sheet with no question.
+- "options": array of option strings if it's an MCQ. Leave [] if none.
+- "correctAnswer": the correct answer/option, if shown or clearly determinable. Leave "" if not present.
+
+IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command (anything starting with a backslash, like \\\\text{}, \\\\sqrt{}, \\\\frac{}) outside of \\\\(...\\\\) or $$...$$ delimiters. For simple values with no real math notation, just write plain text instead of reaching for \\\\text{}.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
+
+If a file clearly isn't a maths formula/trick/reference screen at all, just skip it. If NONE of the files show anything usable, reply with exactly: []`,
+            reasoning: (folderList) => `You are looking at screenshot(s) or a video the user saved as a REASONING TRICK / METHOD REFERENCE NOTE — not a scored mistake. It may show a formula/rule sheet, a worked trick or shortcut, a definition, a reference table, or a full question together with its solution.
+
+For each distinct topic/note shown across the files, return an object with:
+- "folder": classify this note into exactly one of these topic folders (use the string verbatim): ${folderList}
+- "topic": a short specific title for this note (e.g. "Time & Work — Efficiency Trick"). This is a label, not a folder name — pick whichever exact folder from the list above it fits best, even if no folder name matches perfectly.
+- "formula": the core method, trick, or formula(s), if any. Put EACH separate formula, rule, or step on its OWN LINE (use \\n between lines) — never merge multiple formulas/rules into one line or paragraph. Wrap any math notation in LaTeX: \\\\(...\\\\) for inline, $$...$$ for a display block, one per line. Leave "" if nothing formula-like is shown.
+- "trick": a short, clear write-up (2-5 sentences, plain text) of the trick, method, or explanation shown — why it works or when to use it. Leave "" if there's nothing beyond the formula/rule itself.
+- "table": if the image contains a genuine table (a reference sheet, a comparison of cases, a chart), reproduce it as a markdown pipe table: header row, then a |---|---| separator row, then one data row per line. Leave "" if there's no real table — do not invent one.
+- "question": the full original question text, ONLY if a specific question is shown alongside the formula/trick. Leave "" if it's just a standalone formula/trick/reference sheet with no question.
+- "options": array of option strings if it's an MCQ. Leave [] if none.
+- "correctAnswer": the correct answer/option, if shown or clearly determinable. Leave "" if not present.
+
+IMPORTANT — formulas, equations & tables: write every formula, equation, or mathematical expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for a display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command (anything starting with a backslash, like \\\\text{}, \\\\sqrt{}, \\\\frac{}) outside of \\\\(...\\\\) or $$...$$ delimiters. For simple values with no real math notation, just write plain text instead of reaching for \\\\text{}.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary before or after. Example: [{"folder": "...", "topic": "...", "formula": "...", "trick": "...", "table": "", "question": "", "options": [], "correctAnswer": ""}]
+
+If a file clearly isn't a reasoning trick/method/reference screen at all, just skip it. If NONE of the files show anything usable, reply with exactly: []`,
+        };
+        for (const key in SUBJECTS) { SUBJECTS[key].notesInstruction = NOTES_PROMPTS[key]; }
+
         let sharedImages = []; // [{blob, name, type, base64, objectUrl}]
 
         function openShareDB() {
@@ -358,6 +450,21 @@ Reply with ONLY a raw JSON array of these objects — no markdown code fences, n
 
         function renderThumbs() {
             el('thumb-grid').innerHTML = sharedImages.map(img => `<img class="thumb" src="${img.objectUrl}" alt="shared screenshot">`).join('');
+        }
+
+        // ---- "Add to Notes" toggle — same idea as the toggle inside each subject
+        // app's own Add Screenshots modal, just living on the share-sheet page instead. ----
+        let shareNotesMode = false;
+        function toggleShareNotesMode() {
+            shareNotesMode = !shareNotesMode;
+            const toggle = el('share-notes-toggle');
+            const knob = el('share-notes-toggle-knob');
+            toggle.setAttribute('aria-checked', shareNotesMode ? 'true' : 'false');
+            toggle.classList.toggle('bg-amber-500', shareNotesMode);
+            toggle.classList.toggle('bg-slate-300', !shareNotesMode);
+            toggle.classList.toggle('dark:bg-white/10', !shareNotesMode);
+            knob.classList.toggle('translate-x-5', shareNotesMode);
+            el('sort-btn-text').textContent = shareNotesMode ? 'Save to Notes' : 'Sort into folders';
         }
 
         function saveKeyAndContinue() {
@@ -472,6 +579,55 @@ Reply with ONLY a raw JSON array, one object per image in the same order given: 
             localStorage.setItem(storageKey, JSON.stringify(entries));
         }
 
+        // ---- Notes-mode extraction — same JSON shape and storage key
+        // (`<prefix>_notes__default`) each subject app's own Notes screen reads from. ----
+        async function extractNotesForSubject(subjectKey, images) {
+            const s = SUBJECTS[subjectKey];
+            const folderList = s.allSubfolders.map(f => `"${f}"`).join(', ');
+            const parts = [{ text: s.notesInstruction(folderList) }];
+            images.forEach(img => parts.push({ inlineData: { mimeType: img.type, data: img.base64 } }));
+            const parsed = await callGemini(parts);
+            if (!Array.isArray(parsed)) return [];
+
+            const now = Date.now();
+            const notes = [];
+            parsed.forEach((item, i) => {
+                if (!item) return;
+                const topic = (item.topic || '').toString().trim();
+                const formula = (item.formula || '').toString().trim();
+                const trick = (item.trick || '').toString().trim();
+                const table = (item.table || '').toString().trim();
+                const question = (item.question || '').toString().trim();
+                const rawFolder = (item.folder || '').toString().trim();
+                const folder = s.allSubfolders.includes(rawFolder) ? rawFolder : '';
+                if (!topic && !formula && !trick && !table && !question) return;
+                notes.push({
+                    id: 'note-' + now + '-' + i + '-' + Math.random().toString(36).slice(2, 7),
+                    topic: topic || 'Untitled Note',
+                    folder,
+                    formula, trick, table, question,
+                    options: Array.isArray(item.options) ? item.options.filter(Boolean) : [],
+                    correctAnswer: (item.correctAnswer || '').toString().trim(),
+                    createdAt: now,
+                    source: 'ai'
+                });
+            });
+            return notes;
+        }
+
+        function appendNotesToStorage(subjectKey, newNotes) {
+            const s = SUBJECTS[subjectKey];
+            const storageKey = s.prefix + '_notes__default';
+            let notes = [];
+            try {
+                const raw = localStorage.getItem(storageKey);
+                notes = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(notes)) notes = [];
+            } catch (e) { notes = []; }
+            notes.push(...newNotes);
+            localStorage.setItem(storageKey, JSON.stringify(notes));
+        }
+
         function openSubjectApp(subjectKey) {
             const s = SUBJECTS[subjectKey];
             try {
@@ -517,11 +673,74 @@ Reply with ONLY a raw JSON array, one object per image in the same order given: 
             showOnly('result-state');
         }
 
+        // Same layout as renderResults, but for notes: shows topics saved instead of
+        // folders. Sync status now reflects real Drive push results (notes are
+        // included in the same per-subject backup as mistake entries).
+        function renderNotesResults(summary, irrelevantCount, errors) {
+            const wrap = el('result-state');
+            let html = '';
+            const subjectsAdded = Object.keys(summary).filter(k => summary[k].count > 0);
+
+            if (subjectsAdded.length) {
+                html += subjectsAdded.map(key => {
+                    const s = SUBJECTS[key];
+                    return `<div class="card p-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background:#d97706"><i class="fa-solid fa-book-bookmark"></i></span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold truncate">${summary[key].count} note${summary[key].count > 1 ? 's' : ''} added to ${s.label}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${summary[key].folders.join(', ')}</p>
+                                <p class="text-[10px] font-semibold ${summary[key].synced ? 'text-emerald-600' : 'text-slate-400'} truncate"><i class="fa-solid ${summary[key].synced ? 'fa-cloud-arrow-up' : 'fa-hard-drive'}"></i> ${summary[key].synced ? 'Synced to Drive' : 'Saved on device'}</p>
+                            </div>
+                        </div>
+                        <button onclick="openSubjectApp('${key}')" class="shrink-0 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg">Open</button>
+                    </div>`;
+                }).join('');
+            } else {
+                html += `<div class="card p-5 text-center text-sm text-slate-500 dark:text-slate-400">Couldn't find a formula, trick, or reference note in what was shared.</div>`;
+            }
+
+            if (irrelevantCount > 0) {
+                html += `<div class="text-center text-[11px] text-slate-400 dark:text-slate-500 pt-1">${irrelevantCount} image${irrelevantCount > 1 ? 's' : ''} skipped as not exam-related.</div>`;
+            }
+            if (errors.length) {
+                html += `<div class="card p-4 text-xs text-rose-600">${errors.join('<br>')}</div>`;
+            }
+            html += `<button onclick="location.href='./index.html'" class="w-full px-4 py-2.5 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-sm font-semibold rounded-xl">Done</button>`;
+
+            wrap.innerHTML = html;
+            showOnly('result-state');
+        }
+
         async function startClassification() {
             if (!getGeminiKey()) { showOnly('key-state'); return; }
             try {
                 setStatus(`Figuring out the subject for ${sharedImages.length} image${sharedImages.length > 1 ? 's' : ''}…`);
                 const bySubject = await classifySubjectsForImages();
+
+                if (shareNotesMode) {
+                    const summary = {};
+                    const errors = [];
+                    for (const key of ['english', 'maths', 'gk', 'reasoning']) {
+                        const images = bySubject[key];
+                        summary[key] = { count: 0, folders: [] };
+                        if (!images || !images.length) continue;
+                        setStatus(`Pulling out ${images.length} ${SUBJECTS[key].label} note${images.length > 1 ? 's' : ''}…`);
+                        try {
+                            const newNotes = await extractNotesForSubject(key, images);
+                            if (newNotes.length) {
+                                appendNotesToStorage(key, newNotes);
+                                summary[key].count = newNotes.length;
+                                summary[key].folders = [...new Set(newNotes.map(n => n.topic))];
+                                try { await pushSubjectToCloud(key); summary[key].synced = isDriveConnected() && !!getCachedDriveToken(); } catch (e) { /* saved locally either way; app's own sync will retry later */ }
+                            }
+                        } catch (e) {
+                            errors.push(`${SUBJECTS[key].label}: ${e.message || 'failed to save notes'}`);
+                        }
+                    }
+                    renderNotesResults(summary, (bySubject.irrelevant || []).length, errors);
+                    return;
+                }
 
                 const summary = {};
                 const errors = [];
