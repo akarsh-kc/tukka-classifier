@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sorting your screenshot… — Tukka Classifier</title>
+
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="./icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+
+    <script>
+        (function () {
+            try { if (localStorage.getItem('tukka_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+        })();
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: {
+                brand: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#2e2a6b' }
+            } } }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        html, body { margin: 0; min-height: 100%; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f4f6fb; color: #1e293b; }
+        html.dark body { background: #05070f; color: #e2e8f0; }
+        .card { background: #fff; border-radius: 1.25rem; box-shadow: 0 0 0 1px rgba(99,102,241,0.1), 0 12px 30px -12px rgba(30,27,75,0.25); }
+        html.dark .card { background: #0b0f20; box-shadow: 0 0 0 1px rgba(99,102,241,0.2), 0 12px 30px -12px rgba(0,0,0,0.5); }
+        .thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.75rem; background: #e2e8f0; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .subject-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    </style>
+</head>
+<body class="min-h-screen flex items-start justify-center px-4 py-8">
+    <div class="w-full max-w-md space-y-4">
+
+        <div class="text-center space-y-1 pt-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-brand-600 to-fuchsia-500 flex items-center justify-center text-white text-lg shadow-glow">
+                <i class="fa-solid fa-share-nodes"></i>
+            </div>
+            <h1 class="font-display font-bold text-lg" style="font-family:'Space Grotesk',sans-serif;">Shared to Tukka Classifier</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Sorts what you shared into English, Maths, GK, or Reasoning automatically.</p>
+        </div>
+
+        <div id="empty-state" class="card p-6 text-center hidden space-y-3">
+            <i class="fa-solid fa-inbox text-2xl text-slate-300 dark:text-slate-600"></i>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Nothing was shared here. Open Gallery, pick a screenshot, tap Share, then choose Tukka Classifier.</p>
+            <button onclick="location.href='./index.html'" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-xl">Open Tukka Classifier</button>
+        </div>
+
+        <div id="key-state" class="card p-5 hidden space-y-3">
+            <p class="text-sm font-semibold">Add your Gemini API key first</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Same key used across all Tukka Classifier apps — one-time setup, free from Google AI Studio.</p>
+            <input id="key-input" type="password" placeholder="Paste Gemini API key" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:border-brand-500">
+            <button onclick="saveKeyAndContinue()" class="w-full px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl">Save & continue</button>
+        </div>
+
+        <div id="preview-state" class="card p-4 hidden space-y-4">
+            <div id="thumb-grid" class="grid grid-cols-3 gap-2"></div>
+            <button id="sort-btn" onclick="startClassification()" class="w-full px-4 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-semibold rounded-xl shadow-md flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Sort into folders
+            </button>
+        </div>
+
+        <div id="status-state" class="card p-6 hidden text-center space-y-3">
+            <i class="fa-solid fa-circle-notch spin text-2xl text-brand-600"></i>
+            <p id="status-text" class="text-sm font-medium text-slate-600 dark:text-slate-300">Working…</p>
+        </div>
+
+        <div id="error-state" class="card p-5 hidden space-y-3">
+            <p class="text-sm font-semibold text-rose-600 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Something went wrong</p>
+            <p id="error-text" class="text-xs text-slate-500 dark:text-slate-400"></p>
+            <button onclick="startClassification()" class="w-full px-4 py-2.5 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-sm font-semibold rounded-xl">Try again</button>
+        </div>
+
+        <div id="result-state" class="hidden space-y-3"></div>
+
+    </div>
+
+    <script>
+        // ===================================================================
+        // Receives whatever the OS Share sheet handed us (via the service
+        // worker + IndexedDB relay — see sw.js), lets Gemini decide which
+        // subject each screenshot belongs to, then lets Gemini sort each one
+        // into that subject's own folders — writing into the exact same
+        // localStorage entries each subject app already reads from.
+        // ===================================================================
+
+        const AI_MODEL = 'gemini-flash-lite-latest';
+        const AI_KEY_STORAGE = 'tukka_gemini_api_key';
+        const SHARE_DB_NAME = 'tukka-share-db';
+        const SHARE_STORE = 'shares';
+        const LAST_CATEGORY_KEY = 'tukka_last_category';
+
+        // ---- Google Drive sync — same shared OAuth client + localStorage keys
+        // as every other Tukka Classifier app, so if you're already connected
+        // there, entries added here sync too. This page only ever does a
+        // NON-interactive push: if the cached token is missing/expired it just
+        // skips silently (same as any app would when its token has lapsed) —
+        // there's no sign-in button here, that stays inside the subject apps.
+        const DRIVE_CLIENT_ID = '766379515513-ufmc75dpic898902tughujruoign5fnh.apps.googleusercontent.com';
+        const DRIVE_CONNECTED_KEY = 'tukka_drive_connected';
+        const DRIVE_TOKEN_KEY = 'tukka_drive_token';
+        const DRIVE_TOKEN_EXPIRY_KEY = 'tukka_drive_token_expiry';
+        const DRIVE_FILE_NAME = 'tukka-classifier-full-backup.json';
+        const CATEGORY_NAMES = { eng_analyzer: 'English Classifier', math_analyzer: 'Maths Classifier', gk_analyzer: 'GK Analyzer', reasoning_analyzer: 'Reasoning Analyzer' };
+
+        function isDriveConnected() { return localStorage.getItem(DRIVE_CONNECTED_KEY) === '1'; }
+        function getCachedDriveToken() {
+            const expiry = parseInt(localStorage.getItem(DRIVE_TOKEN_EXPIRY_KEY), 10);
+            const token = localStorage.getItem(DRIVE_TOKEN_KEY);
+            if (token && expiry && Date.now() < expiry - 30000) return token;
+            return null;
+        }
+        async function driveFetch(url, options) {
+            const token = getCachedDriveToken();
+            if (!token) throw new Error('no-cached-token');
+            const opts = Object.assign({}, options);
+            opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + token });
+            return fetch(url, opts);
+        }
+        async function findDriveFileId() {
+            const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+            const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id,name,modifiedTime)`);
+            if (!res.ok) throw new Error('list-failed');
+            const data = await res.json();
+            return (data.files && data.files[0]) ? data.files[0].id : null;
+        }
+        async function readDriveFile(fileId) {
+            const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+            if (!res.ok) throw new Error('read-failed');
+            return res.text();
+        }
+        async function createDriveFile(content) {
+            const boundary = 'tukkameterboundary';
+            const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+            const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
+            const res = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+                method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body
+            });
+            if (!res.ok) throw new Error('create-failed');
+        }
+        async function updateDriveFile(fileId, content) {
+            const res = await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: content
+            });
+            if (!res.ok) throw new Error('update-failed');
+        }
+        // Merge-read-first, same pattern as every app's performCloudPush: pull
+        // whatever's on Drive right now, overwrite only the one subject's key
+        // we just added entries to, leave every other subject's section as-is.
+        async function pushSubjectToCloud(subjectKey) {
+            if (!isDriveConnected() || !getCachedDriveToken()) return; // silently skip — no interactive prompt from this page
+            const s = SUBJECTS[subjectKey];
+            const marker = s.prefix + '_entries__';
+            const exams = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key || key.indexOf(marker) !== 0) continue;
+                const examId = key.slice(marker.length);
+                let list = [];
+                try { list = JSON.parse(localStorage.getItem(key)) || []; } catch (e) {}
+                if (Array.isArray(list) && list.length) exams[examId] = { entries: list };
+            }
+            if (!Object.keys(exams).length) return;
+            const ownData = { [s.prefix]: { categoryName: CATEGORY_NAMES[s.prefix], exams } };
+
+            let existingData = {};
+            try {
+                const existingId = await findDriveFileId();
+                if (existingId) {
+                    const text = await readDriveFile(existingId);
+                    const parsed = JSON.parse(text);
+                    if (parsed && parsed.data && typeof parsed.data === 'object') existingData = parsed.data;
+                }
+            } catch (e) { /* first sync, or offline — proceed with just our own data */ }
+
+            const mergedData = Object.assign({}, existingData, ownData);
+            const content = JSON.stringify({ app: 'Tukka Classifier - Full Backup', version: 1, data: mergedData, updatedAt: Date.now() });
+            const fileId = await findDriveFileId();
+            if (fileId) await updateDriveFile(fileId, content);
+            else await createDriveFile(content);
+        }
+
+        function getGeminiKey() { try { return localStorage.getItem(AI_KEY_STORAGE) || ''; } catch (e) { return ''; } }
+
+        function el(id) { return document.getElementById(id); }
+        function showOnly(id) {
+            ['empty-state','key-state','preview-state','status-state','error-state','result-state'].forEach(s => el(s).classList.toggle('hidden', s !== id));
+        }
+        function setStatus(text) { el('status-text').textContent = text; showOnly('status-state'); }
+
+        // ---- Subject definitions: folder lists + the exact per-subject
+        // extraction prompt each subject app already uses, plus where each
+        // subject's entries live in localStorage. ----
+        const SUBJECTS = {
+            english: {
+                label: 'English', prefix: 'eng_analyzer', examId: 'english_analyzer', category: 'english', icon: 'fa-language', color: '#7c3aed',
+                folders: {
+                    'Vocabulary Master': { type: 'vocab', subfolders: ['Synonyms & Antonyms', 'One-Word Substitutions', 'Idioms & Phrases', 'Phrasal Verbs & Prepositions', 'Spelling Check'] },
+                    'Grammar & Rules': { type: 'qa', subfolders: ['Spotting Errors', 'Sentence Improvement', 'Active & Passive Voice', 'Direct & Indirect Speech', 'Fill in the Blanks'] },
+                    'Reading & Logic': { type: 'qa', subfolders: ['Para Jumbles (PQRS)', 'Cloze Test', 'Reading Comprehension'] }
+                },
+                instruction(folderList) {
+                    return `You are sorting a set of English-exam mistake screenshots for "Tukka Classifier", an English mock-test mistake tracker for SSC/Bank/Railway exam aspirants in India. Each file shows one or more questions the user got wrong in a mock test (vocabulary, grammar, or reading/logic sections).
+
+For EVERY distinct wrong question you can identify across all the files, output one JSON object classified into exactly one of these folders (use the string verbatim): ${folderList}
+
+There are two possible shapes depending on the folder:
+1. If the folder is one of the Vocabulary Master folders (Synonyms & Antonyms, One-Word Substitutions, Idioms & Phrases, Phrasal Verbs & Prepositions, Spelling Check), use this shape:
+{"folder": "<exact folder name>", "type": "vocab", "word": "<the word/idiom/phrase itself>", "meaning": "<its meaning>", "synonyms": ["...", "..."], "antonyms": ["...", "..."]}
+(synonyms/antonyms can be empty arrays if not applicable)
+2. Otherwise use this shape:
+{"folder": "<exact folder name>", "type": "qa", "question": "<the full question text as shown>", "options": ["<option A>", "<option B>", "<option C>", "<option D>"], "correctAnswer": "<the correct option/answer>", "explanation": "<brief explanation of why that's correct>"}
+(options can be an empty array if the question had none)
+
+IMPORTANT — work out the correct answer carefully before writing it. Keep "explanation" SHORT: 1–3 sentences max.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary. If NONE of the files show any mistakes, reply with exactly: []`;
+                }
+            },
+            maths: {
+                label: 'Maths', prefix: 'math_analyzer', examId: 'maths_analyzer', category: 'maths', icon: 'fa-square-root-variable', color: '#9333ea',
+                folders: {
+                    'Number System': { type: 'qa', subfolders: ['Number System', 'HCF and LCM', 'Simplification'] },
+                    'Arithmetic & Numbers': { type: 'qa', subfolders: ['Percentage', 'Average', 'Ratio and Proportion', 'Partnership', 'Mixture and Allegation', 'Profit and Loss', 'Discount', 'Simple Interest', 'Compound Interest', 'Installments (EMI)'] },
+                    'Time, Speed & Work': { type: 'qa', subfolders: ['Time, Speed and Distance', 'Linear Race', 'Circular Race', 'Boats and Streams', 'Work and Time', 'Pipes and Cisterns'] },
+                    'Geometry & Trigonometry': { type: 'qa', subfolders: ['Trigonometry', 'Heights and Distances', 'Mensuration', 'Geometry', 'Coordinate Geometry'] },
+                    'Algebra & Data': { type: 'qa', subfolders: ['Algebra', 'Data Interpretation', 'Mean', 'Median', 'Mode', 'Probability'] }
+                },
+                instruction(folderList) {
+                    return `You are sorting a set of maths-exam wrong-question screenshots for "Tukka Classifier", a maths mock-test mistake tracker for SSC/Bank/Railway exam aspirants in India. Each file shows one or more questions the user got wrong in a mock test.
+
+For EVERY distinct wrong question you can identify, output one JSON object classified into exactly one of these topic folders (use the string verbatim): ${folderList}
+
+Use this exact shape for every object:
+{"folder": "<exact folder name>", "type": "qa", "question": "<the full question text as shown>", "options": ["<option A>", "<option B>", "<option C>", "<option D>"], "correctAnswer": "<the correct option/answer, with the final numeric value or expression>", "explanation": "<a short worked-out solution of how to reach the answer>"}
+(options can be an empty array if the question had none)
+
+IMPORTANT — get the final answer right: work through the calculation carefully, step by step, before writing anything down. Cross-check the final number/expression against the given options.
+IMPORTANT — "explanation" must read as a finished, clean solution only — 2-4 concise steps, not scratch work.
+IMPORTANT — write every formula/equation/expression using LaTeX, wrapped in \\\\(...\\\\) for inline or $$...$$ for display block — e.g. \\\\(\\\\frac{22}{7} \\\\times r^2\\\\). Never emit a bare LaTeX command outside those delimiters.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary. If NONE of the files show any wrong questions, reply with exactly: []`;
+                }
+            },
+            gk: {
+                label: 'GK', prefix: 'gk_analyzer', examId: 'gk_analyzer', category: 'gk', icon: 'fa-earth-asia', color: '#0891b2',
+                folders: {
+                    'Geography': { type: 'qa', subfolders: ['Geography'] },
+                    'Ancient History': { type: 'qa', subfolders: ['Ancient History'] },
+                    'Medieval History': { type: 'qa', subfolders: ['Medieval History'] },
+                    'Modern History': { type: 'qa', subfolders: ['Modern History'] },
+                    'Polity': { type: 'qa', subfolders: ['Polity'] },
+                    'Economics': { type: 'qa', subfolders: ['Economics'] },
+                    'Physics': { type: 'qa', subfolders: ['Physics'] },
+                    'Chemistry': { type: 'qa', subfolders: ['Chemistry'] },
+                    'Biology': { type: 'qa', subfolders: ['Biology'] },
+                    'Environment': { type: 'qa', subfolders: ['Environment'] },
+                    'Static GK': { type: 'qa', subfolders: ['Static GK'] }
+                },
+                instruction(folderList) {
+                    return `You are sorting a set of General Knowledge (GK) exam wrong-question screenshots for "Tukka Classifier", a GK mock-test mistake tracker for SSC/Bank/Railway exam aspirants in India.
+
+For EVERY distinct wrong question you can identify, output one JSON object classified into exactly one of these subject folders (use the string verbatim): ${folderList}
+
+Use this exact shape for every object:
+{"folder": "<exact folder name>", "type": "qa", "question": "<the full question text as shown>", "options": ["<option A>", "<option B>", "<option C>", "<option D>"], "correctAnswer": "<the correct option/answer>", "explanation": "<a short explanation of why that's correct>"}
+(options can be an empty array if the question had none)
+
+IMPORTANT — classify carefully: Ancient/Medieval/Modern History are separate folders — sort by era. Physics/Chemistry/Biology go in their own science subject. Anything general-fact/one-off (awards, books, sports, days, appointments) goes in "Static GK".
+IMPORTANT — reason through each question carefully before writing anything down.
+If a question involves a formula/equation, write it using LaTeX wrapped in \\\\(...\\\\) or $$...$$.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary. If NONE of the files show any wrong questions, reply with exactly: []`;
+                }
+            },
+            reasoning: {
+                label: 'Reasoning', prefix: 'reasoning_analyzer', examId: 'reasoning_analyzer', category: 'reasoning', icon: 'fa-puzzle-piece', color: '#4f46e5',
+                folders: {
+                    'Analogy': { type: 'qa', subfolders: ['Analogy'] }, 'Classification': { type: 'qa', subfolders: ['Classification'] },
+                    'Series': { type: 'qa', subfolders: ['Series'] }, 'Coding-Decoding': { type: 'qa', subfolders: ['Coding-Decoding'] },
+                    'Blood Relations': { type: 'qa', subfolders: ['Blood Relations'] }, 'Direction & Distance': { type: 'qa', subfolders: ['Direction & Distance'] },
+                    'Order & Ranking': { type: 'qa', subfolders: ['Order & Ranking'] }, 'Math Operations': { type: 'qa', subfolders: ['Math Operations'] },
+                    'Clock & Calendar': { type: 'qa', subfolders: ['Clock & Calendar'] }, 'Cubes & Dice': { type: 'qa', subfolders: ['Cubes & Dice'] },
+                    'Non-Verbal Figures': { type: 'qa', subfolders: ['Non-Verbal Figures'] }, 'Syllogism': { type: 'qa', subfolders: ['Syllogism'] },
+                    'Venn Diagrams': { type: 'qa', subfolders: ['Venn Diagrams'] }, 'Statement & Logic': { type: 'qa', subfolders: ['Statement & Logic'] },
+                    'Seating & Puzzles': { type: 'qa', subfolders: ['Seating & Puzzles'] }
+                },
+                instruction(folderList) {
+                    return `You are sorting a set of Logical & Analytical Reasoning exam wrong-question screenshots for "Tukka Classifier", a reasoning mock-test mistake tracker for SSC/Bank/Railway exam aspirants in India.
+
+For EVERY distinct wrong question you can identify, output one JSON object classified into exactly one of these topic folders (use the string verbatim): ${folderList}
+
+Use this exact shape for every object:
+{"folder": "<exact folder name>", "type": "qa", "question": "<the full question text as shown>", "options": ["<option A>", "<option B>", "<option C>", "<option D>"], "correctAnswer": "<the correct option/answer>", "explanation": "<a short explanation of why that's correct>"}
+(options can be an empty array if the question had none)
+
+IMPORTANT — classify carefully, these topics are easy to confuse (Analogy vs Classification, Syllogism vs Venn Diagrams vs Statement & Logic, Order & Ranking vs Seating & Puzzles, etc — pick the single best-fitting folder).
+If a question involves a diagram/figure that can't be captured in plain text, describe it clearly in words. If it involves a mathematical expression, write it using LaTeX wrapped in \\\\(...\\\\) or $$...$$.
+
+Reply with ONLY a raw JSON array of these objects — no markdown code fences, no commentary. If NONE of the files show any wrong questions, reply with exactly: []`;
+                }
+            }
+        };
+
+        for (const key in SUBJECTS) {
+            const s = SUBJECTS[key];
+            s.allSubfolders = Object.values(s.folders).flatMap(g => g.subfolders);
+            s.groupFor = (sf) => Object.keys(s.folders).find(g => s.folders[g].subfolders.includes(sf)) || null;
+            s.typeFor = (sf) => { const g = s.groupFor(sf); return g ? s.folders[g].type : 'qa'; };
+        }
+
+        let sharedImages = []; // [{blob, name, type, base64, objectUrl}]
+
+        function openShareDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(SHARE_DB_NAME, 1);
+                req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(SHARE_STORE)) req.result.createObjectStore(SHARE_STORE); };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function loadPendingShare() {
+            try {
+                const db = await openShareDB();
+                const payload = await new Promise((resolve, reject) => {
+                    const tx = db.transaction(SHARE_STORE, 'readwrite');
+                    const store = tx.objectStore(SHARE_STORE);
+                    const getReq = store.get('pending');
+                    getReq.onsuccess = () => { store.delete('pending'); resolve(getReq.result); };
+                    getReq.onerror = () => reject(getReq.error);
+                });
+                db.close();
+                return Array.isArray(payload) ? payload : [];
+            } catch (e) { return []; }
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('Could not read shared image'));
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function renderThumbs() {
+            el('thumb-grid').innerHTML = sharedImages.map(img => `<img class="thumb" src="${img.objectUrl}" alt="shared screenshot">`).join('');
+        }
+
+        function saveKeyAndContinue() {
+            const key = el('key-input').value.trim();
+            if (!key) return;
+            try { localStorage.setItem(AI_KEY_STORAGE, key); } catch (e) {}
+            showOnly('preview-state');
+        }
+
+        async function init() {
+            const items = await loadPendingShare();
+            if (!items.length) { showOnly('empty-state'); return; }
+
+            for (const item of items) {
+                if (!item.blob || !(item.type || '').startsWith('image/')) continue;
+                const base64 = await blobToBase64(item.blob);
+                sharedImages.push({ blob: item.blob, name: item.name, type: item.type, base64, objectUrl: URL.createObjectURL(item.blob) });
+            }
+            if (!sharedImages.length) { showOnly('empty-state'); return; }
+
+            renderThumbs();
+            if (!getGeminiKey()) { showOnly('key-state'); } else { showOnly('preview-state'); }
+        }
+
+        async function callGemini(parts) {
+            const key = getGeminiKey();
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ role: 'user', parts }] })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error((data && data.error && data.error.message) || `Request failed (${res.status})`);
+            const candidate = data.candidates && data.candidates[0];
+            const text = candidate && candidate.content && candidate.content.parts ? candidate.content.parts.map(p => p.text || '').join('') : '';
+            const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+            return JSON.parse(cleaned);
+        }
+
+        function routerInstruction(n) {
+            return `You are the front-door classifier for "Tukka Classifier", an exam mistake tracker for SSC/Bank/Railway aspirants in India with four subject trackers: English, Maths, GK (General Knowledge), and Reasoning.
+
+You are given ${n} image(s), each a screenshot of a mock-test "wrong answer" review screen (or possibly something irrelevant). For EACH image, in order, decide which single subject it belongs to:
+- "english" — vocabulary, grammar, reading comprehension questions
+- "maths" — numerical/calculation/geometry/algebra questions
+- "gk" — general knowledge/static facts/history/geography/science-fact questions
+- "reasoning" — logical/analytical reasoning, puzzles, series, coding-decoding, etc.
+- "irrelevant" — not a mock-test wrong-answer screenshot from any of the above subjects at all
+
+Reply with ONLY a raw JSON array, one object per image in the same order given: [{"index": 0, "subject": "english"}, {"index": 1, "subject": "maths"}, ...]. No markdown, no commentary.`;
+        }
+
+        async function classifySubjectsForImages() {
+            const parts = [{ text: routerInstruction(sharedImages.length) }];
+            sharedImages.forEach((img, i) => parts.push({ inlineData: { mimeType: img.type, data: img.base64 } }));
+            const result = await callGemini(parts);
+            if (!Array.isArray(result)) throw new Error('Could not figure out the subject — try again.');
+            const bySubject = { english: [], maths: [], gk: [], reasoning: [], irrelevant: [] };
+            result.forEach(r => {
+                const idx = r && r.index;
+                const subj = r && r.subject;
+                if (typeof idx === 'number' && sharedImages[idx] && bySubject[subj]) bySubject[subj].push(sharedImages[idx]);
+            });
+            return bySubject;
+        }
+
+        async function extractEntriesForSubject(subjectKey, images) {
+            const s = SUBJECTS[subjectKey];
+            const folderList = s.allSubfolders.map(f => `"${f}"`).join(', ');
+            const parts = [{ text: s.instruction(folderList) }];
+            images.forEach(img => parts.push({ inlineData: { mimeType: img.type, data: img.base64 } }));
+            const parsed = await callGemini(parts);
+            if (!Array.isArray(parsed)) return [];
+
+            const now = Date.now();
+            const entries = [];
+            parsed.forEach((item, i) => {
+                if (!item || !s.allSubfolders.includes(item.folder)) return;
+                const type = s.typeFor(item.folder);
+                const entry = {
+                    id: 'entry-' + now + '-' + i + '-' + Math.random().toString(36).slice(2, 7),
+                    group: s.groupFor(item.folder), folder: item.folder, createdAt: now, type
+                };
+                if (type === 'vocab') {
+                    entry.word = (item.word || '').toString().trim();
+                    entry.meaning = (item.meaning || '').toString().trim();
+                    entry.synonyms = Array.isArray(item.synonyms) ? item.synonyms.filter(Boolean) : [];
+                    entry.antonyms = Array.isArray(item.antonyms) ? item.antonyms.filter(Boolean) : [];
+                    if (!entry.word) return;
+                } else {
+                    entry.question = (item.question || '').toString().trim();
+                    entry.options = Array.isArray(item.options) ? item.options.filter(Boolean) : [];
+                    entry.correctAnswer = (item.correctAnswer || '').toString().trim();
+                    entry.explanation = (item.explanation || '').toString().trim();
+                    if (!entry.question) return;
+                }
+                entries.push(entry);
+            });
+            return entries;
+        }
+
+        function appendEntriesToStorage(subjectKey, newEntries) {
+            const s = SUBJECTS[subjectKey];
+            const storageKey = s.prefix + '_entries__default';
+            let entries = [];
+            try {
+                const raw = localStorage.getItem(storageKey);
+                entries = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(entries)) entries = [];
+            } catch (e) { entries = []; }
+            entries.push(...newEntries);
+            localStorage.setItem(storageKey, JSON.stringify(entries));
+        }
+
+        function openSubjectApp(subjectKey) {
+            const s = SUBJECTS[subjectKey];
+            try {
+                localStorage.setItem(LAST_CATEGORY_KEY, s.category);
+                localStorage.setItem(s.category + '_current_exam', s.examId);
+            } catch (e) {}
+            location.href = './index.html';
+        }
+
+        function renderResults(summary, irrelevantCount, errors) {
+            const wrap = el('result-state');
+            let html = '';
+            const subjectsAdded = Object.keys(summary).filter(k => summary[k].count > 0);
+
+            if (subjectsAdded.length) {
+                html += subjectsAdded.map(key => {
+                    const s = SUBJECTS[key];
+                    return `<div class="card p-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background:${s.color}"><i class="fa-solid ${s.icon}"></i></span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold truncate">${summary[key].count} added to ${s.label}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${summary[key].folders.join(', ')}</p>
+                                <p class="text-[10px] font-semibold ${summary[key].synced ? 'text-emerald-600' : 'text-slate-400'} truncate"><i class="fa-solid ${summary[key].synced ? 'fa-cloud-arrow-up' : 'fa-hard-drive'}"></i> ${summary[key].synced ? 'Synced to Drive' : 'Saved on device'}</p>
+                            </div>
+                        </div>
+                        <button onclick="openSubjectApp('${key}')" class="shrink-0 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg">Open</button>
+                    </div>`;
+                }).join('');
+            } else {
+                html += `<div class="card p-5 text-center text-sm text-slate-500 dark:text-slate-400">Couldn't find any gradeable mistakes in what was shared.</div>`;
+            }
+
+            if (irrelevantCount > 0) {
+                html += `<div class="text-center text-[11px] text-slate-400 dark:text-slate-500 pt-1">${irrelevantCount} image${irrelevantCount > 1 ? 's' : ''} skipped as not exam-related.</div>`;
+            }
+            if (errors.length) {
+                html += `<div class="card p-4 text-xs text-rose-600">${errors.join('<br>')}</div>`;
+            }
+            html += `<button onclick="location.href='./index.html'" class="w-full px-4 py-2.5 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-sm font-semibold rounded-xl">Done</button>`;
+
+            wrap.innerHTML = html;
+            showOnly('result-state');
+        }
+
+        async function startClassification() {
+            if (!getGeminiKey()) { showOnly('key-state'); return; }
+            try {
+                setStatus(`Figuring out the subject for ${sharedImages.length} image${sharedImages.length > 1 ? 's' : ''}…`);
+                const bySubject = await classifySubjectsForImages();
+
+                const summary = {};
+                const errors = [];
+                for (const key of ['english', 'maths', 'gk', 'reasoning']) {
+                    const images = bySubject[key];
+                    summary[key] = { count: 0, folders: [] };
+                    if (!images || !images.length) continue;
+                    setStatus(`Sorting ${images.length} ${SUBJECTS[key].label} mistake${images.length > 1 ? 's' : ''}…`);
+                    try {
+                        const entries = await extractEntriesForSubject(key, images);
+                        if (entries.length) {
+                            appendEntriesToStorage(key, entries);
+                            summary[key].count = entries.length;
+                            summary[key].folders = [...new Set(entries.map(e => e.folder))];
+                            try { await pushSubjectToCloud(key); summary[key].synced = isDriveConnected() && !!getCachedDriveToken(); } catch (e) { /* saved locally either way; app's own sync will retry later */ }
+                        }
+                    } catch (e) {
+                        errors.push(`${SUBJECTS[key].label}: ${e.message || 'failed to sort'}`);
+                    }
+                }
+
+                renderResults(summary, (bySubject.irrelevant || []).length, errors);
+            } catch (err) {
+                el('error-text').textContent = err.message || 'Something went wrong.';
+                showOnly('error-state');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
